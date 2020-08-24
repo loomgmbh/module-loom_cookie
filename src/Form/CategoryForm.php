@@ -79,34 +79,46 @@ class CategoryForm extends EntityForm {
 
     $regexes_description = $this->t('One regex per line.');
 
-    $form['scriptUrlRegexes'] = [
+    $form['server_side'] = [
+      '#type' => 'details',
+      '#title' => t('Server Side'),
+      '#open' => TRUE,
+    ];
+
+    $form['server_side']['scriptUrlRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Script URL regexes'),
       '#description' => $regexes_description,
       '#default_value' => implode("\n", $category->scriptUrlRegexes),
     ];
 
-    $form['scriptBlockRegexes'] = [
+    $form['server_side']['scriptBlockRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Script Block regexes'),
       '#description' => $regexes_description,
       '#default_value' => implode("\n", $category->scriptBlockRegexes),
     ];
 
-    $form['scriptUrlRegexesClientSide'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Script URL regexes (blocked client-side)'),
-      '#description' => $regexes_description . '<br/>' .
-        'Use this option for scripts that are loaded by JS and therefore cannot' .
-        ' be blocked on server side.',
-      '#default_value' => implode("\n", $category->scriptUrlRegexesClientSide),
-    ];
-
-    $form['embedUrlRegexes'] = [
+    $form['server_side']['embedUrlRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Embed URL regexes (embeds + iframes)'),
       '#description' => $regexes_description,
       '#default_value' => implode("\n", $category->embedUrlRegexes),
+    ];
+
+    $form['client_side'] = [
+      '#type' => 'details',
+      '#title' => t('Client Side'),
+      '#open' => TRUE,
+    ];
+
+    $form['client_side']['scriptUrlRegexesClientSide'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Script URL regexes (blocked client-side)'),
+      '#description' => $regexes_description . '<br/>' .
+        t('Use this option for scripts that are loaded by JS and therefore cannot' .
+          ' be blocked on server side.'),
+      '#default_value' => implode("\n", $category->scriptUrlRegexesClientSide),
     ];
 
     return $form;
