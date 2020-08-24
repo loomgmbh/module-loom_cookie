@@ -1,0 +1,13 @@
+loom.cookie.settings:
+  title: 'LOOM Cookie Settings'
+  parent: eu_cookie_compliance.settings
+  description: 'Configure LOOM Cookie module'
+  route_name: loom.cookie.settings
+  weight: 0
+
+loom.cookie.entity.category.collection:
+  title: 'Categories'
+  parent: eu_cookie_compliance.settings
+  description: 'Configure LOOM Cookie Categories'
+  route_name: loom.cookie.entity.category.collection
+  weight: 1

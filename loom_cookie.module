@@ -1,0 +1,144 @@
+<?php /** @noinspection HtmlUnknownTarget */
+
+/** @noinspection PhpUnused */
+
+use Drupal\Core\Cache\Cache;
+use Drupal\Core\Render\Markup;
+use Drupal\Core\Url;
+use Drupal\loom_cookie\CategoryInterface;
+
+/**
+ * Implements hook_page_attachments_alter().
+ *
+ * @param array $attachments
+ */
+function loom_cookie_page_attachments_alter(array &$attachments) {
+  /** @var CategoryInterface $categories */
+  $categories = Drupal::entityTypeManager()
+    ->getStorage('loom_cookie_category')
+    ->loadMultiple();
+
+  foreach ($categories as $category) {
+    if (!empty($category->attachmentNames)) {
+      $attachment_names = $category->attachmentNames;
+
+      // remove all attachments that are configured to be filtered
+      foreach ($attachments['#attached']['html_head'] as &$attachment) {
+        if (in_array($attachment[1], $attachment_names)) {
+          $attachment[0]['#attributes']['data-loom-cookie-category'] = $category->id();
+          $attachment[0]['#attributes']['data-loom-cookie-type'] = 'script-block';
+          $attachment[0]['#attributes']['data-loom-cookie-content'] = $attachment[0]['#value'];
+          $attachment[0]['#value'] = '';
+        }
+      }
+    }
+
+    if (!empty($category->scriptUrlRegexesClientSide)) {
+      $script_url_regexes = str_replace('/', '\/', $category->scriptUrlRegexesClientSide);
+      $big_regex = !empty($script_url_regexes)
+        ? '^(' . implode('|', $script_url_regexes) . ')$'
+        : '';
+
+      if ($big_regex) {
+        $attachments['#attached']['drupalSettings']['loom_cookie'][$category->id]['clientSideBlockedScripts'] = $big_regex;
+      }
+    }
+  }
+
+  // insert script that re-enables scripts when the category gets allowed
+  array_unshift($attachments['#attached']['library'], 'loom_cookie/filter_scripts');
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param $variables
+ */
+function loom_cookie_preprocess_html(&$variables) {
+  // add cache tags for this module
+  $config = Drupal::config('loom_cookie.settings');
+  $cache_tags = isset($attachments['#cache']['tags']) ? $attachments['#cache']['tags'] : [];
+  $cache_tags[] = 'config:loom_cookie_category_list';
+  $attachments['#cache']['tags'] = Cache::mergeTags($cache_tags, $config->getCacheTags());
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @param $form
+ */
+function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
+  // disable the module's own script filter feature in favor of our custom one
+  $form['javascripts']['disabled_javascripts'] = [
+    '#type' => 'details',
+    '#title' => 'Old settings (readonly)',
+    '#open' => FALSE,
+    '#disabled' => TRUE,
+    0 => $form['javascripts']['disabled_javascripts'],
+  ];
+
+  $form['javascripts']['link_to_loom_cookie'] = [
+    '#markup' => t('<strong>This feature has been replaced by the <a href="@link">LOOM Cookie</a> module.</strong>', [
+      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
+        ->toString(),
+    ]),
+    '#weight' => -10,
+  ];
+
+  // add link to our module settings in consent storage section
+  $form['consent_storage']['link_to_loom_cookie'] = [
+    '#markup' => t('<strong>See <a href="@link">here</a> for more options.</strong>', [
+      '@link' => Url::fromRoute('loom_cookie.settings')
+        ->toString(),
+    ]),
+  ];
+
+  // disable the 'whitelisted cookies' field because we set its content when a category is saved
+  $form['cookies']['#disabled'] = TRUE;
+
+  $form['cookies']['link_to_loom_cookie'] = [
+    '#markup' => t('<strong>This is automatically set by the <a href="@link">LOOM Cookie</a> module.</strong>', [
+      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
+        ->toString(),
+    ]),
+    '#weight' => -10,
+  ];
+
+  $form['consent_per_category']['cookie_categories']['#disabled'] = TRUE;
+  $form['consent_per_category']['link_to_loom_cookie'] = [
+    '#markup' => t('<strong>The cookie categories are automatically set by the <a href="@link">LOOM Cookie</a> module.</strong>', [
+      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
+        ->toString(),
+    ]),
+    '#weight' => -10,
+  ];
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param array $vars
+ */
+function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
+  /** @var CategoryInterface[] $categories */
+  $categories = Drupal::entityTypeManager()
+    ->getStorage('loom_cookie_category')
+    ->loadMultiple();
+  foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
+    $cookie_category['description'] = Markup::create($categories[$cat_id]->description['value']);
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function loom_cookie_cron() {
+  // delete old consent entries
+  $consent_entry_lifetime = Drupal::config('loom_cookie.settings')
+    ->get('consent_storage.lifetime');
+  $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
+  Drupal::database()->delete('eu_cookie_compliance_basic_consent')
+    ->condition('timestamp', $max_possible_timestamp, '<')
+    ->execute();
+}
+
