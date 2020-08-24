@@ -51,7 +51,7 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
   $config = Drupal::config('loom_cookie.settings');
   $frontend = $config->get('frontend');
 
-  foreach ($frontend['attachments'] as $attachment) {
+  foreach (($frontend['attachments'] ?? []) as $attachment) {
     $attachments['#attached']['library'][] = $attachment;
   }
 }
