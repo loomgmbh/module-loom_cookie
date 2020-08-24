@@ -124,8 +124,10 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
   $categories = Drupal::entityTypeManager()
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
-  foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
-    $cookie_category['description'] = Markup::create($categories[$cat_id]->description['value']);
+  foreach ($vars['cookie_categories'] as $cat_id => $cookie_category) {
+    if (!empty($categories[$cat_id]->description['value'])) {
+      $vars['cookie_categories'][$cat_id]['description'] = Markup::create($categories[$cat_id]->description['value']);
+    }
   }
 }
 
@@ -137,6 +139,7 @@ function loom_cookie_cron() {
   $consent_entry_lifetime = Drupal::config('loom_cookie.settings')
     ->get('consent_storage.lifetime');
   $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
+  
   Drupal::database()->delete('eu_cookie_compliance_basic_consent')
     ->condition('timestamp', $max_possible_timestamp, '<')
     ->execute();
