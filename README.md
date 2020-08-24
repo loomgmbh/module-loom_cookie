@@ -2,11 +2,8 @@
 
 Dieses Modul beinhaltet:
 
-- eine Funktion zum laden von `.preprocess.php`-Dateien für jedes Template
-- Ein `EntityWrapper` zur vereinfachung des preprocesses
-- Twig include Paths für `./components`
-- Twig Funktionen:
-  - `getModifier()`
+- Eine Erweiterung zum blocken von Tracking Scripten per Regex
+- Client Side blockieren von Scripten
 
 # Dependencies
 
