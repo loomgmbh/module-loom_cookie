@@ -47,6 +47,18 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
 
   // insert script that re-enables scripts when the category gets allowed
   array_unshift($attachments['#attached']['library'], 'loom_cookie/filter_scripts');
+
+  $config = Drupal::config('loom_cookie.settings');
+  $frontend = $config->get('frontend');
+
+  foreach ($frontend['attachments'] as $attachment) {
+    $attachments['#attached']['library'][] = $attachment;
+  }
+}
+
+function loom_cookie_multiline_split($value): array {
+  if (empty($value)) return [];
+  return str_replace("\r", '', array_filter(array_unique(explode("\n", $value))));
 }
 
 /**
@@ -88,7 +100,7 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
   // add link to our module settings in consent storage section
   $form['consent_storage']['link_to_loom_cookie'] = [
     '#markup' => t('<strong>See <a href="@link">here</a> for more options.</strong>', [
-      '@link' => Url::fromRoute('loom_cookie.settings')
+      '@link' => Url::fromRoute('loom.cookie.settings')
         ->toString(),
     ]),
   ];
@@ -120,10 +132,13 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
  * @param array $vars
  */
 function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
+  if (empty($vars['cookie_categories'])) return;
+
   /** @var CategoryInterface[] $categories */
   $categories = Drupal::entityTypeManager()
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
+
   foreach ($vars['cookie_categories'] as $cat_id => $cookie_category) {
     if (!empty($categories[$cat_id]->description['value'])) {
       $vars['cookie_categories'][$cat_id]['description'] = Markup::create($categories[$cat_id]->description['value']);
@@ -139,7 +154,7 @@ function loom_cookie_cron() {
   $consent_entry_lifetime = Drupal::config('loom_cookie.settings')
     ->get('consent_storage.lifetime');
   $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
-  
+
   Drupal::database()->delete('eu_cookie_compliance_basic_consent')
     ->condition('timestamp', $max_possible_timestamp, '<')
     ->execute();

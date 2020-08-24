@@ -130,10 +130,7 @@ class CategoryForm extends EntityForm {
     ];
 
     foreach ($multiline_fields as $field) {
-      $category->$field = str_replace("\r", '',
-        array_filter(
-          array_unique(
-            explode("\n", $form_state->getValue($field)))));
+      $category->$field = loom_cookie_multiline_split($form_state->getValue($field));
     }
 
     $status = $category->save();

@@ -4,6 +4,8 @@ namespace Drupal\loom_cookie\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\ConfigFormBase;
+use function implode;
+use function loom_cookie_multiline_split;
 
 class SettingsForm extends ConfigFormBase {
 
@@ -43,6 +45,22 @@ class SettingsForm extends ConfigFormBase {
         ->get('consent_storage.lifetime'),
     ];
 
+    $form['frontend'] = [
+      '#type' => 'details',
+      '#title' => t('Frontend'),
+      '#open' => TRUE,
+      '#tree' => TRUE,
+    ];
+
+    $form['frontend']['attachments'] = [
+      '#type' => 'textarea',
+      '#title' => t('Attachments'),
+      '#default_value' => $this->config('loom_cookie.settings')
+        ->get('frontend.attachments') ? implode("\r\n", $this->config('loom_cookie.settings')
+        ->get('frontend.attachments')) : '',
+      '#description' => t('One attachment per line. WARNING: Every attachment will be loaded on all sites.'),
+    ];
+
     return $form;
   }
 
@@ -50,6 +68,10 @@ class SettingsForm extends ConfigFormBase {
     $config = $this->config('loom_cookie.settings');
 
     $config->set('consent_storage', $form_state->getValue('consent_storage'));
+
+    $frontend = $form_state->getValue('frontend');
+    $frontend['attachments'] = loom_cookie_multiline_split($frontend['attachments']);
+    $config->set('frontend', $frontend);
 
     $config->save();
 
