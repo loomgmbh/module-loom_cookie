@@ -121,21 +121,21 @@
       }
 
       for (const category of script.enabledCategories) {
-        $('[data-loom-gdpr-category="' + category + '"]').each((n, el) => {
+        $('[data-loom-cookie-category="' + category + '"]').each((n, el) => {
           let $el = $(el);
 
-          switch ($el.attr('data-loom-gdpr-type')) {
+          switch ($el.attr('data-loom-cookie-type')) {
             case 'script-block':
-              $el.html($el.attr('data-loom-gdpr-content'));
+              $el.html($el.attr('data-loom-cookie-content'));
               break;
             default:
-              $el.attr('src', $el.attr('data-loom-gdpr-src'));
+              $el.attr('src', $el.attr('data-loom-cookie-src'));
           }
 
-          $el.attr('data-loom-gdpr-category', null);
-          $el.attr('data-loom-gdpr-type', null);
-          $el.attr('data-loom-gdpr-content', null);
-          $el.attr('data-loom-gdpr-src', null);
+          $el.attr('data-loom-cookie-category', null);
+          $el.attr('data-loom-cookie-type', null);
+          $el.attr('data-loom-cookie-content', null);
+          $el.attr('data-loom-cookie-src', null);
         });
       }
     },

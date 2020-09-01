@@ -44,3 +44,6 @@ loom_cookie.category.*:
     description:
       type: sequence
       label: 'Description'
+    detailedDescription:
+      type: sequence
+      label: 'Detailed description'
