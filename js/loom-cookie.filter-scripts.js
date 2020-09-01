@@ -1,8 +1,8 @@
-(function ($) {
+(function($) {
 
   var script = {
 
-    attach: function (context, settings) {
+    attach: function(context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
@@ -15,17 +15,21 @@
         script.settings = settings.loom_cookie;
 
         script.blockSomeScripts();
-
-        script.enableElements();
       }
+
+      script.enableElements();
 
       // Click on button "Accept all"
       // -> check all categories and click on "Save" button
-      $(document).on('click', '.eu-cookie-compliance-accept-all-button', (e) => {
-        let $popupContent = $(e.target).closest('.eu-cookie-compliance-content');
-        $popupContent.find('[name="cookie-categories"]').prop('checked', true);
-        $popupContent.find('.eu-cookie-compliance-save-preferences-button').click();
-      });
+      $(document)
+        .on('click', '.eu-cookie-compliance-accept-all-button', (e) => {
+          let $popupContent = $(e.target)
+            .closest('.eu-cookie-compliance-content');
+          $popupContent.find('[name="cookie-categories"]')
+            .prop('checked', true);
+          $popupContent.find('.eu-cookie-compliance-save-preferences-button')
+            .click();
+        });
     },
 
     settings: [],
@@ -66,21 +70,22 @@
               }
               originalSetAttribute('src', value);
               return true;
-            }
-          }
+            },
+          },
         });
 
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function (name, value) {
+        scriptElt.setAttribute = function(name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }
           else {
-            HTMLScriptElement.prototype.setAttribute.call(scriptElt, name, value);
+            HTMLScriptElement.prototype.setAttribute.call(scriptElt, name,
+              value);
           }
-        }
+        };
 
         return scriptElt;
       };
@@ -102,7 +107,8 @@
           continue;
         }
 
-        if (src.match(new RegExp(script.settings[category].clientSideBlockedScripts))) {
+        if (src.match(
+          new RegExp(script.settings[category].clientSideBlockedScripts))) {
           return true;
         }
       }
@@ -146,8 +152,11 @@
       Drupal.eu_cookie_compliance.withdrawAction = () => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
-        let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name === 'undefined' || drupalSettings.eu_cookie_compliance.cookie_name === '') ? 'cookie-agreed' : drupalSettings.eu_cookie_compliance.cookie_name;
-        $.cookie(cookieName, null);
+        let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
+          'undefined' || drupalSettings.eu_cookie_compliance.cookie_name === '')
+          ? 'cookie-agreed'
+          : drupalSettings.eu_cookie_compliance.cookie_name;
+        $.removeCookie(cookieName, {path: '/'});
         location.reload();
       };
 
@@ -156,8 +165,9 @@
       Drupal.eu_cookie_compliance.toggleWithdrawBanner = () => {
         origToggleWithdrawBanner();
 
-        $('.eu-cookie-withdraw-wrapper').toggleClass('eu-cookie-withdraw-wrapper-open');
-      }
+        $('.eu-cookie-withdraw-wrapper')
+          .toggleClass('eu-cookie-withdraw-wrapper-open');
+      };
     },
   };
 
