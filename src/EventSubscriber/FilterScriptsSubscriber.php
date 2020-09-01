@@ -77,12 +77,12 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
         $whole_tag = $element[0];
         if (!empty($element['src_iframe'])) {
           // it is an iframe
-          $src = $element['src_iframe'];
+          $src = trim($element['src_iframe']);
           $tag = 'iframe';
         }
         elseif (!empty($element['src_embed'])) {
           // it is an embed
-          $src = $element['src_embed'];
+          $src = trim($element['src_embed']);
           $tag = 'embed';
         }
         else {
@@ -138,7 +138,7 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
 
             $big_url_regex = $url_regexes_by_category[$category_id];
             if ($big_url_regex) {
-              $src = $matches[1];
+              $src = trim($matches[1]);
               if (preg_match($big_url_regex, $src)) {
                 // replace url with empty data url
                 $whole_tag = str_replace($src, 'data:,', $whole_tag);
