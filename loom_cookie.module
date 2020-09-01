@@ -47,17 +47,12 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
 
   // insert script that re-enables scripts when the category gets allowed
   array_unshift($attachments['#attached']['library'], 'loom_cookie/filter_scripts');
-
-  $config = Drupal::config('loom_cookie.settings');
-  $frontend = $config->get('frontend');
-
-  foreach (($frontend['attachments'] ?? []) as $attachment) {
-    $attachments['#attached']['library'][] = $attachment;
-  }
 }
 
 function loom_cookie_multiline_split($value): array {
-  if (empty($value)) return [];
+  if (empty($value)) {
+    return [];
+  }
   return str_replace("\r", '', array_filter(array_unique(explode("\n", $value))));
 }
 
@@ -132,7 +127,9 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
  * @param array $vars
  */
 function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
-  if (empty($vars['cookie_categories'])) return;
+  if (empty($vars['cookie_categories'])) {
+    return;
+  }
 
   /** @var CategoryInterface[] $categories */
   $categories = Drupal::entityTypeManager()
@@ -142,6 +139,16 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
   foreach ($vars['cookie_categories'] as $cat_id => $cookie_category) {
     if (!empty($categories[$cat_id]->description['value'])) {
       $vars['cookie_categories'][$cat_id]['description'] = Markup::create($categories[$cat_id]->description['value']);
+    }
+  }
+
+  foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
+    $cookie_category['id'] = $cat_id;
+    if (!empty($cookie_category['description'])) {
+      $cookie_category['description'] = Markup::create($categories[$cat_id]->description['value']);
+    }
+    if (!empty($cookie_category['detailed_description'])) {
+      $cookie_category['detailed_description'] = Markup::create($categories[$cat_id]->detailedDescription['value']);
     }
   }
 }

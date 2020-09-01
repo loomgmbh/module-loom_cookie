@@ -46,7 +46,7 @@ class CategoryForm extends EntityForm {
       '#title' => $this->t('Label'),
       '#maxlength' => 255,
       '#default_value' => $category->label(),
-      '#description' => $this->t("Label for the Category."),
+      '#description' => $this->t('Label for the category.'),
       '#required' => TRUE,
     ];
 
@@ -65,59 +65,114 @@ class CategoryForm extends EntityForm {
       '#default_value' => $category->description['value'],
     ];
 
-    $form['cookies'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Cookie names'),
-      '#default_value' => implode("\n", $category->cookies),
+    $form['detailedDescription'] = [
+      '#type' => 'text_format',
+      '#title' => $this->t('Detailed description'),
+      '#default_value' => $category->detailedDescription['value'],
+      '#description' => $this->t('This can be used to describe the cookies and scripts belonging to the category.'),
     ];
 
-    $form['attachmentNames'] = [
-      '#type' => 'textarea',
-      '#title' => $this->t('Attachment names'),
-      '#default_value' => implode("\n", $category->attachmentNames),
+    $form['whitelist'] = [
+      '#type' => 'fieldset',
+      '#title' => t('Whitelist'),
+      '#open' => TRUE,
+      0 => [
+        '#markup' => $this->t(
+          'These cookies and scripts will be blocked unless the user ' .
+          'accepts this category.' .
+          '<p><strong>Scripts</strong> can be blocked server-side or client-side. ' .
+          'It is recommended to prefer server-side blocking due to performance ' .
+          'reasons. Some scripts cannot be blocked server-side (e.g. scripts ' .
+          'loaded by Google Tag Manager), thus you will have to use client-side ' .
+          'blocking for them.</p>' .
+          '<p><strong>Cookies</strong> can only be blocked client-side. ' .
+          'However, this module cannot prevent cookies from beeing set at all. ' .
+          'The cookies are deleted in an interval of 5 seconds. So a user could ' .
+          'be tracked nevertheless. Therefore it is recommended that you instead ' .
+          'block the scripts that would set the cookies, if possible.</p>'
+        ),
+      ],
     ];
 
-    $regexes_description = $this->t('One regex per line.');
-
-    $form['server_side'] = [
+    $form['whitelist']['server_side'] = [
       '#type' => 'details',
       '#title' => t('Server Side'),
       '#open' => TRUE,
     ];
 
-    $form['server_side']['scriptUrlRegexes'] = [
+    $form['whitelist']['server_side']['attachmentNames'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Attachment names'),
+      '#default_value' => implode("\n", $category->attachmentNames),
+      '#description' => $this->t(
+        'Names of Drupal attachments. If possible, you should prefer this ' .
+        'method over the others due to performance reasons. You can determine ' .
+        'attachments by reading the source code of modules or using a debugger.<br/>' .
+        'One attachment name per line.<br/>' .
+        'Example:<br/>' .
+        'matomo_tracking_script'),
+    ];
+
+    $form['whitelist']['server_side']['scriptUrlRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Script URL regexes'),
-      '#description' => $regexes_description,
+      '#description' => $this->t(
+        'One regex per line.' . '<br/>' .
+        'Example:<br/>' .
+        '.*google-analytics\.com/analytics\.js'
+      ),
       '#default_value' => implode("\n", $category->scriptUrlRegexes),
     ];
 
-    $form['server_side']['scriptBlockRegexes'] = [
+    $form['whitelist']['server_side']['scriptBlockRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Script Block regexes'),
-      '#description' => $regexes_description,
+      '#description' => $this->t(
+        'Use this to block specific script blocks by comparing their
+        content with a regular expression<br/>' .
+        'One regex per line.' . '<br/>' .
+        'Example:<br/>' .
+        '.*document\.cookie=.*'
+      ),
       '#default_value' => implode("\n", $category->scriptBlockRegexes),
     ];
 
-    $form['server_side']['embedUrlRegexes'] = [
+    $form['whitelist']['server_side']['embedUrlRegexes'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Embed URL regexes (embeds + iframes)'),
-      '#description' => $regexes_description,
+      '#description' => $this->t(
+        'One regex per line.<br/>' .
+        'Example:<br/>' .
+        'https://www\.google\.com/maps/embed\?.*'
+      ),
       '#default_value' => implode("\n", $category->embedUrlRegexes),
     ];
 
-    $form['client_side'] = [
+    $form['whitelist']['client_side'] = [
       '#type' => 'details',
       '#title' => t('Client Side'),
       '#open' => TRUE,
     ];
 
-    $form['client_side']['scriptUrlRegexesClientSide'] = [
+    $form['whitelist']['client_side']['cookies'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Cookie names'),
+      '#default_value' => implode("\n", $category->cookies),
+      '#description' => $this->t(
+        'One cookie name per line.'
+      )
+    ];
+
+    $form['whitelist']['client_side']['scriptUrlRegexesClientSide'] = [
       '#type' => 'textarea',
       '#title' => $this->t('Script URL regexes (blocked client-side)'),
-      '#description' => $regexes_description . '<br/>' .
-        t('Use this option for scripts that are loaded by JS and therefore cannot' .
-          ' be blocked on server side.'),
+      '#description' => $this->t(
+        'One regex per line.<br/>' .
+        'Use this option for scripts that are loaded by JS and therefore cannot' .
+        ' be blocked on server side.' . '<br/>' .
+        'Example:<br/>' .
+        '.*google-analytics\.com/analytics\.js'
+      ),
       '#default_value' => implode("\n", $category->scriptUrlRegexesClientSide),
     ];
 

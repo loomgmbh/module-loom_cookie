@@ -58,6 +58,11 @@ class Category extends ConfigEntityBase implements CategoryInterface {
   public $description = ['value' => ''];
 
   /**
+   * @var array
+   */
+  public $detailedDescription = ['value' => ''];
+
+  /**
    * Names of cookies to be filtered.
    *
    * @var array

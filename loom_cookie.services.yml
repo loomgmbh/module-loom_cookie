@@ -1,5 +1,4 @@
 services:
-  # loom_gdpr.filter_scripts_subscriber:
   loom.cookie.filter_scripts.subscriber:
     class: Drupal\loom_cookie\EventSubscriber\FilterScriptsSubscriber
     tags:

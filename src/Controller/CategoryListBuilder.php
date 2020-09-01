@@ -35,4 +35,15 @@ class CategoryListBuilder extends DraggableListBuilder {
   public function getFormId() {
     return 'loom_cookie_category_list';
   }
+
+  public function render() {
+    $this->messenger()->addWarning($this->t(
+      '<strong>Hint:</strong> If styles or scripts are missing that you ' .
+      'need for the cookie banner to work properly then the reason could be ' .
+      'the way <em>eu_cookie_compliance</em> renders the banner template. In ' .
+      'that case you will have to attach the missing styles or scripts as ' .
+      'libraries to the site\'s theme.'
+    ));
+    return parent::render();
+  }
 }
