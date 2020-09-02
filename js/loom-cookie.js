@@ -1,11 +1,16 @@
-(function($) {
+(function ($) {
 
   var script = {
 
-    attach: function(context, settings) {
+    attach: function (context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
+
+      // apply Drupal behaviors to popup
+      $(document).on('eu_cookie_compliance_popup_open', function () {
+        Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
+      });
 
       script.enabledCategories = Drupal.eu_cookie_compliance.getAcceptedCategories();
 
@@ -81,7 +86,7 @@
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function(name, value) {
+        scriptElt.setAttribute = function (name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }

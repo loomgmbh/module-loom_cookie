@@ -13,7 +13,7 @@ use Drupal\loom_cookie\CategoryInterface;
  * @param array $attachments
  */
 function loom_cookie_page_attachments_alter(array &$attachments) {
-  /** @var CategoryInterface $categories */
+  /** @var CategoryInterface[] $categories */
   $categories = Drupal::entityTypeManager()
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
@@ -46,7 +46,7 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
   }
 
   // insert script that re-enables scripts when the category gets allowed
-  array_unshift($attachments['#attached']['library'], 'loom_cookie/filter_scripts');
+  array_unshift($attachments['#attached']['library'], 'loom_cookie/js');
 }
 
 function loom_cookie_multiline_split($value): array {
@@ -136,18 +136,12 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
 
-  foreach ($vars['cookie_categories'] as $cat_id => $cookie_category) {
-    if (!empty($categories[$cat_id]->description['value'])) {
-      $vars['cookie_categories'][$cat_id]['description'] = Markup::create($categories[$cat_id]->description['value']);
-    }
-  }
-
   foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
     $cookie_category['id'] = $cat_id;
-    if (!empty($cookie_category['description'])) {
+    if (!empty($categories[$cat_id]->description)) {
       $cookie_category['description'] = Markup::create($categories[$cat_id]->description['value']);
     }
-    if (!empty($cookie_category['detailed_description'])) {
+    if (!empty($categories[$cat_id]->detailedDescription['value'])) {
       $cookie_category['detailed_description'] = Markup::create($categories[$cat_id]->detailedDescription['value']);
     }
   }
