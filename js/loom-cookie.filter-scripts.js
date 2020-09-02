@@ -9,27 +9,30 @@
 
       script.enabledCategories = Drupal.eu_cookie_compliance.getAcceptedCategories();
 
-      script.modifyEUCookieComplianceFunctions();
+      if (context == document) {
+        script.modifyEUCookieComplianceFunctions();
 
-      if (!!settings.loom_cookie && Object.keys(settings.loom_cookie).length) {
-        script.settings = settings.loom_cookie;
+        if (!!settings.loom_cookie &&
+          Object.keys(settings.loom_cookie).length) {
+          script.settings = settings.loom_cookie;
 
-        script.blockSomeScripts();
+          script.blockSomeScripts();
+        }
+
+        // Click on button "Accept all"
+        // -> check all categories and click on "Save" button
+        $(document)
+          .on('click', '.eu-cookie-compliance-accept-all-button', (e) => {
+            let $popupContent = $(e.target)
+              .closest('.eu-cookie-compliance-content');
+            $popupContent.find('[name="cookie-categories"]')
+              .prop('checked', true);
+            $popupContent.find('.eu-cookie-compliance-save-preferences-button')
+              .click();
+          });
       }
 
       script.enableElements();
-
-      // Click on button "Accept all"
-      // -> check all categories and click on "Save" button
-      $(document)
-        .on('click', '.eu-cookie-compliance-accept-all-button', (e) => {
-          let $popupContent = $(e.target)
-            .closest('.eu-cookie-compliance-content');
-          $popupContent.find('[name="cookie-categories"]')
-            .prop('checked', true);
-          $popupContent.find('.eu-cookie-compliance-save-preferences-button')
-            .click();
-        });
     },
 
     settings: [],
@@ -71,6 +74,7 @@
               originalSetAttribute('src', value);
               return true;
             },
+            configurable: true,
           },
         });
 
