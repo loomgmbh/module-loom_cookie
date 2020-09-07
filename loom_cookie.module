@@ -138,6 +138,8 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
     ]),
     '#weight' => -10,
   ];
+
+  unset($form['popup_message']['show_more_info']['#states']['visible']["input[name='method']"]);
 }
 
 /**
