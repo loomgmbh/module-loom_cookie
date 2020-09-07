@@ -1,3 +1,7 @@
 js:
   js:
     js/loom-cookie.js: {}
+css:
+  css:
+    theme:
+      css/loom-cookie.css: {}

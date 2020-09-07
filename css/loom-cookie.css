@@ -1,0 +1,9 @@
+body.hide-cookie-banner #sliding-popup,
+body.hide-cookie-banner #sliding-popup:before,
+body.hide-cookie-banner #sliding-popup:after,
+body.hide-cookie-banner #sliding-popup * {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+}

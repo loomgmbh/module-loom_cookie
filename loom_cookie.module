@@ -11,6 +11,9 @@ use Drupal\loom_cookie\CategoryInterface;
  * Implements hook_page_attachments_alter().
  *
  * @param array $attachments
+ *
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function loom_cookie_page_attachments_alter(array &$attachments) {
   /** @var CategoryInterface[] $categories */
@@ -47,6 +50,8 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
 
   // insert script that re-enables scripts when the category gets allowed
   array_unshift($attachments['#attached']['library'], 'loom_cookie/js');
+  // add styles
+  array_unshift($attachments['#attached']['library'], 'loom_cookie/styles');
 }
 
 function loom_cookie_multiline_split($value): array {
@@ -59,14 +64,28 @@ function loom_cookie_multiline_split($value): array {
 /**
  * Implements hook_preprocess_HOOK().
  *
- * @param $variables
+ * @param $vars
  */
-function loom_cookie_preprocess_html(&$variables) {
+function loom_cookie_preprocess_html(&$vars) {
   // add cache tags for this module
   $config = Drupal::config('loom_cookie.settings');
-  $cache_tags = isset($attachments['#cache']['tags']) ? $attachments['#cache']['tags'] : [];
+  $cache_tags = isset($vars['#cache']['tags']) ? $vars['#cache']['tags'] : [];
   $cache_tags[] = 'config:loom_cookie_category_list';
-  $attachments['#cache']['tags'] = Cache::mergeTags($cache_tags, $config->getCacheTags());
+  $vars['#cache']['tags'] = Cache::mergeTags($cache_tags, $config->getCacheTags());
+
+
+  // hide cookie banner on specific pages
+  $ecc_config = Drupal::config('eu_cookie_compliance.settings');
+  $path = Drupal::service('path.current')->getPath();
+  $url_alias_path = Drupal::service('path_alias.manager')
+    ->getAliasByPath($path);
+  $exclude_paths = $ecc_config->get('exclude_paths');
+  $path_matcher = Drupal::service('path.matcher');
+  $path_match = $path_matcher->matchPath($path, $exclude_paths);
+  $path_match_url_alias = $path_matcher->matchPath($url_alias_path, $exclude_paths);
+  if ($path_match || $path_match_url_alias) {
+    $vars['attributes']['class'][] = 'hide-cookie-banner';
+  }
 }
 
 /**
@@ -125,6 +144,9 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
  * Implements hook_preprocess_HOOK().
  *
  * @param array $vars
+ *
+ * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+ * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
   if (empty($vars['cookie_categories'])) {
@@ -161,3 +183,13 @@ function loom_cookie_cron() {
     ->execute();
 }
 
+/**
+ * Implements hook_eu_cookie_compliance_path_match_alter().
+ *
+ * @param $excluded
+ */
+function loom_cookie_eu_cookie_compliance_path_match_alter(&$excluded) {
+  // Never disable eu_cookie_compliance based on the path.
+  // We just hide the banner popup by custom code.
+  $excluded = FALSE;
+}
