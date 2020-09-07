@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function loom_cookie_install() {
+  loom_cookie_update_8001();
+}
+
+/**
+ * Activate EU Cookie Compliance setting for excluding admin pages
+ */
+function loom_cookie_update_8001() {
+  $ecc_config = Drupal::configFactory()->getEditable('eu_cookie_compliance.settings');
+  $ecc_config->set('exclude_admin_theme', true);
+  $ecc_config->save();
+}
