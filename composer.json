@@ -1,18 +1,19 @@
 {
-  "name": "loomgmbh/loom_cookie",
-  "type": "drupal-module",
-  "description": "Extension for eu_cookie_compliance module",
-  "keywords": [
-    "Drupal"
-  ],
-  "license": "GPL-2.0+",
-  "homepage": "https://www.drupal.org/project/loom_cookie",
-  "minimum-stability": "dev",
-  "support": {
-    "issues": "https://www.drupal.org/project/issues/loom_cookie",
-    "source": "http://cgit.drupalcode.org/loom_cookie"
-  },
-  "require": {
-    "composer/installers": "~1.0"
-  }
+    "name": "loomgmbh/loom_cookie",
+    "type": "drupal-module",
+    "description": "Extension for eu_cookie_compliance module",
+    "keywords": [
+        "Drupal"
+    ],
+    "license": "GPL-2.0+",
+    "homepage": "https://www.drupal.org/project/loom_cookie",
+    "minimum-stability": "dev",
+    "support": {
+        "issues": "https://www.drupal.org/project/issues/loom_cookie",
+        "source": "http://cgit.drupalcode.org/loom_cookie"
+    },
+    "require": {
+        "composer/installers": "~1.0",
+        "ext-json": "*"
+    }
 }

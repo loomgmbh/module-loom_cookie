@@ -5,13 +5,31 @@
  */
 function loom_cookie_install() {
   loom_cookie_update_8001();
+  loom_cookie_update_8002();
 }
 
 /**
  * Activate EU Cookie Compliance setting for excluding admin pages
  */
 function loom_cookie_update_8001() {
-  $ecc_config = Drupal::configFactory()->getEditable('eu_cookie_compliance.settings');
-  $ecc_config->set('exclude_admin_theme', true);
+  $ecc_config = Drupal::configFactory()
+    ->getEditable('eu_cookie_compliance.settings');
+  $ecc_config->set('exclude_admin_theme', TRUE);
+  $ecc_config->save();
+}
+
+/**
+ * Activate consent storage.
+ */
+function loom_cookie_update_8002() {
+  $config = Drupal::configFactory()->getEditable('loom_cookie.settings');
+  if ($config->get('consent_storage.lifetime') == NULL) {
+    $config->set('consent_storage.lifetime', 100);
+  }
+  $config->save();
+
+  $ecc_config = Drupal::configFactory()
+    ->getEditable('eu_cookie_compliance.settings');
+  $ecc_config->set('consent_storage_method', 'loom_cookie');
   $ecc_config->save();
 }
