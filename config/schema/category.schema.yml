@@ -42,8 +42,9 @@ loom_cookie.category.*:
       sequence:
         type: string
     description:
-      type: sequence
+      type: text_format
       label: 'Description'
+      translatable: true
     detailedDescription:
-      type: sequence
+      type: text_format
       label: 'Detailed description'

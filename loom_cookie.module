@@ -161,12 +161,15 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
     ->loadMultiple();
 
   foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
+    $category = $categories[$cat_id];
+
     $cookie_category['id'] = $cat_id;
-    if (!empty($categories[$cat_id]->description)) {
-      $cookie_category['description'] = Markup::create($categories[$cat_id]->description['value']);
+    $cookie_category['label'] = $category->label();
+    if (!empty($category->description)) {
+      $cookie_category['description'] = Markup::create($category->description['value']);
     }
-    if (!empty($categories[$cat_id]->detailedDescription['value'])) {
-      $cookie_category['detailed_description'] = Markup::create($categories[$cat_id]->detailedDescription['value']);
+    if (!empty($category->detailedDescription['value'])) {
+      $cookie_category['detailed_description'] = Markup::create($category->detailedDescription['value']);
     }
   }
 }
