@@ -78,6 +78,11 @@ function loom_cookie_category_form(array $form, array $form_state, $category_id 
     '#disabled' => !$category->isNew(),
   ];
 
+  $form[$variable_name]['weight'] = [
+    '#type' => 'hidden',
+    '#default_value' => $category->weight,
+  ];
+
   $form[$variable_name]['description'] = [
     '#type' => 'text_format',
     '#title' => t('Description'),
@@ -368,29 +373,31 @@ function loom_cookie_category_form_submit(array $form, array &$form_state) {
     $variable = variable_get($old_variable_name);
     variable_del($old_variable_name);
     variable_set($variable_name, $variable);
+    foreach (i18n_language_list() as $langcode => $lang) {
+      variable_realm_set('language', $langcode, $variable_name, $variable, TRUE);
+    }
   }
   else {
     $variable_name = $form_state['input']['loom_cookie_variable_name'];
-    $variable = $form_state['values'][$variable_name];
+    $variable = $form_state['input'][$variable_name];
+
+    // sync non-translatable fields
+    $nontranslatableFields = [
+      'cookies',
+      'scriptUrlRegexes',
+      'scriptBlockRegexes',
+      'scriptUrlRegexesClientSide',
+      'embedUrlRegexes',
+    ];
+    $category = new Category($variable);
+    $category->id = str_replace('loom_cookie_category__', '', $variable_name);
+    $category->isNew = FALSE;
+    foreach ($nontranslatableFields as $field) {
+      $category->set($field, $category->$field);
+    }
   }
 
   drupal_flush_all_caches();
-
-  // sync non-translatable fields
-  $nontranslatableFields = [
-    'cookies',
-    'scriptUrlRegexes',
-    'scriptBlockRegexes',
-    'scriptUrlRegexesClientSide',
-    'embedUrlRegexes',
-  ];
-  //  $category = Category::load(str_replace('loom_cookie_category__', '', $variable_name));
-//  $category = new Category($form_state['input'][$variable_name]);
-  $category = new Category($variable);
-  $category->isNew = FALSE;
-  foreach ($nontranslatableFields as $field) {
-    $category->set($field, $category->$field);
-  }
 
   Category::updateEUCookieComplianceSettings();
 }
