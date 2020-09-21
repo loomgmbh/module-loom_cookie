@@ -1,5 +1,0 @@
-services:
-  loom.cookie.filter_scripts.subscriber:
-    class: Drupal\loom_cookie\EventSubscriber\FilterScriptsSubscriber
-    tags:
-      - { name: event_subscriber }

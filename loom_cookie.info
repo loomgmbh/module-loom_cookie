@@ -1,0 +1,7 @@
+name = LOOM Cookie
+description = Extension for eu_cookie_compliance module
+core = 7.x
+configure = admin/config/system/eu-cookie-compliance/loom-cookie
+dependencies[] = eu_cookie_compliance
+dependencies[] = i18n
+dependencies[] = i18n_variable

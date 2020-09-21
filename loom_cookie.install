@@ -1,35 +1,32 @@
-<?php
+<?php /** @noinspection PhpUnused */
 
 /**
  * Implements hook_install().
  */
 function loom_cookie_install() {
-  loom_cookie_update_8001();
-  loom_cookie_update_8002();
+  loom_cookie_update_7001();
 }
 
 /**
- * Activate EU Cookie Compliance setting for excluding admin pages
+ * Implements hook_uninstall().
  */
-function loom_cookie_update_8001() {
-  $ecc_config = Drupal::configFactory()
-    ->getEditable('eu_cookie_compliance.settings');
-  $ecc_config->set('exclude_admin_theme', TRUE);
-  $ecc_config->save();
-}
-
-/**
- * Activate consent storage.
- */
-function loom_cookie_update_8002() {
-  $config = Drupal::configFactory()->getEditable('loom_cookie.settings');
-  if ($config->get('consent_storage.lifetime') == NULL) {
-    $config->set('consent_storage.lifetime', 100);
+function loom_cookie_uninstall() {
+  variable_del('loom_cookie');
+  $categories = loom_cookie_get_categories();
+  foreach ($categories as $category) {
+    $category->delete();
   }
-  $config->save();
+}
 
-  $ecc_config = Drupal::configFactory()
-    ->getEditable('eu_cookie_compliance.settings');
-  $ecc_config->set('consent_storage_method', 'loom_cookie');
-  $ecc_config->save();
+/**
+ * Set default settings
+ */
+function loom_cookie_update_7001() {
+  loom_cookie_set_ecc_settings([
+    //Activate EU Cookie Compliance setting for excluding admin pages
+    'exclude_admin_pages' => TRUE,
+    // Activate consent storage.
+    'consent_storage_method' => 'loom_cookie',
+  ]);
+
 }

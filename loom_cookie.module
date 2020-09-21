@@ -1,57 +1,122 @@
-<?php /** @noinspection HtmlUnknownTarget */
-
+<?php
 /** @noinspection PhpUnused */
+/** @noinspection HtmlUnknownTarget */
 
-use Drupal\Core\Cache\Cache;
-use Drupal\Core\Render\Markup;
-use Drupal\Core\Url;
-use Drupal\loom_cookie\CategoryInterface;
+require_once 'src/Category.php';
 
 /**
- * Implements hook_page_attachments_alter().
- *
- * @param array $attachments
- *
- * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
- * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+ * Implements hook_menu().
  */
-function loom_cookie_page_attachments_alter(array &$attachments) {
-  /** @var CategoryInterface[] $categories */
-  $categories = Drupal::entityTypeManager()
-    ->getStorage('loom_cookie_category')
-    ->loadMultiple();
+function loom_cookie_menu() {
+  $access = ['administer EU Cookie Compliance popup'];
 
-  foreach ($categories as $category) {
-    if (!empty($category->attachmentNames)) {
-      $attachment_names = $category->attachmentNames;
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie'] = [
+    'title' => 'Loom Cookie',
+    'type' => MENU_LOCAL_ACTION,
+    'description' => 'Extension for eu_cookie_compliance module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_admin_form'],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.admin.inc',
+  ];
 
-      // remove all attachments that are configured to be filtered
-      foreach ($attachments['#attached']['html_head'] as &$attachment) {
-        if (in_array($attachment[1], $attachment_names)) {
-          $attachment[0]['#attributes']['data-loom-cookie-category'] = $category->id();
-          $attachment[0]['#attributes']['data-loom-cookie-type'] = 'script-block';
-          $attachment[0]['#attributes']['data-loom-cookie-content'] = $attachment[0]['#value'];
-          $attachment[0]['#value'] = '';
-        }
-      }
-    }
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories'] = [
+    'title' => 'Loom Cookie: Categories',
+    'type' => MENU_LOCAL_ACTION,
+    'description' => 'Extension for eu_cookie_compliance module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_categories_form'],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.categories.inc',
+  ];
 
-    if (!empty($category->scriptUrlRegexesClientSide)) {
-      $script_url_regexes = str_replace('/', '\/', $category->scriptUrlRegexesClientSide);
-      $big_regex = !empty($script_url_regexes)
-        ? '^(' . implode('|', $script_url_regexes) . ')$'
-        : '';
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories/add'] = [
+    'title' => 'Loom Cookie: Add category',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_category_form'],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.category.inc',
+    'type' => MENU_LOCAL_ACTION,
+  ];
 
-      if ($big_regex) {
-        $attachments['#attached']['drupalSettings']['loom_cookie'][$category->id]['clientSideBlockedScripts'] = $big_regex;
-      }
-    }
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories/%/edit'] = [
+    'title' => 'Loom Cookie: Categories',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_category_form', 6],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.category.inc',
+  ];
+
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories/%/delete'] = [
+    'title' => 'Loom Cookie: Delete category',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_category_delete_confirm', 6],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.category.delete.inc',
+  ];
+
+  return $items;
+}
+
+function loom_cookie_get_settings($setting = 'all') {
+  $settings = variable_get('loom_cookie', []);
+
+  // Ensure a default value exists for each setting.
+  $settings += [
+    'consent_storage' => ['lifetime' => '100'],
+  ];
+
+  if ($setting == 'all') {
+    return $settings;
   }
 
-  // insert script that re-enables scripts when the category gets allowed
-  array_unshift($attachments['#attached']['library'], 'loom_cookie/js');
-  // add styles
-  array_unshift($attachments['#attached']['library'], 'loom_cookie/styles');
+  return isset($settings[$setting]) ? $settings[$setting] : NULL;
+}
+
+/**
+ * @return Category[]
+ */
+function loom_cookie_get_categories() {
+  $langcode = i18n_langcode();
+
+  variable_realm_initialize('language', $langcode);
+  global $conf;
+
+  $keys = array_filter(array_keys($conf), function ($key) {
+    return substr($key, 0, 22) == 'loom_cookie_category__';
+  });
+
+  /** @var Category[] $categories */
+  $categories = array_filter(array_map(function ($key) use ($conf) {
+    $category = new Category($conf[$key]);
+    $category->isNew = FALSE;
+    return $category;
+  }, $keys));
+
+  $categories_by_id = [];
+  foreach ($categories as $category) {
+    $categories_by_id[$category->id] = $category;
+  }
+
+  uasort($categories_by_id, function ($a, $b) {
+    return $a->weight < $b->weight ? -1 : 1;
+  });
+
+  return $categories_by_id;
+}
+
+function loom_cookie_get_ecc_settings() {
+  return variable_get('eu_cookie_compliance');
+}
+
+function loom_cookie_set_ecc_settings($settings) {
+  foreach (i18n_language_list() as $langcode => $lang) {
+    $ecc_settings = variable_realm_get('language', $langcode, 'eu_cookie_compliance');
+    foreach ($settings as $key => $value) {
+      $ecc_settings[$key] = $value;
+    }
+    variable_realm_set('language', $langcode, 'eu_cookie_compliance', $ecc_settings, TRUE);
+  }
 }
 
 function loom_cookie_multiline_split($value): array {
@@ -62,60 +127,34 @@ function loom_cookie_multiline_split($value): array {
 }
 
 /**
- * Implements hook_preprocess_HOOK().
- *
- * @param $vars
- */
-function loom_cookie_preprocess_html(&$vars) {
-  // add cache tags for this module
-  $config = Drupal::config('loom_cookie.settings');
-  $cache_tags = isset($vars['#cache']['tags']) ? $vars['#cache']['tags'] : [];
-  $cache_tags[] = 'config:loom_cookie_category_list';
-  $vars['#cache']['tags'] = Cache::mergeTags($cache_tags, $config->getCacheTags());
-
-
-  // hide cookie banner on specific pages
-  $ecc_config = Drupal::config('eu_cookie_compliance.settings');
-  $path = Drupal::service('path.current')->getPath();
-  $url_alias_path = Drupal::service('path_alias.manager')
-    ->getAliasByPath($path);
-  $exclude_paths = $ecc_config->get('exclude_paths');
-  $path_matcher = Drupal::service('path.matcher');
-  $path_match = $path_matcher->matchPath($path, $exclude_paths);
-  $path_match_url_alias = $path_matcher->matchPath($url_alias_path, $exclude_paths);
-  if ($path_match || $path_match_url_alias) {
-    $vars['attributes']['class'][] = 'hide-cookie-banner';
-  }
-}
-
-/**
  * Implements hook_form_FORM_ID_alter().
  *
  * @param $form
  */
-function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
+function loom_cookie_form_eu_cookie_compliance_admin_form_alter(&$form) {
+  $overview_url = '/admin/config/system/eu-cookie-compliance/loom-cookie/categories';
+
   // disable the module's own script filter feature in favor of our custom one
-  $form['javascripts']['disabled_javascripts'] = [
-    '#type' => 'details',
-    '#title' => 'Old settings (readonly)',
-    '#open' => FALSE,
+  $form['javascripts']['eu_cookie_compliance']['disabled_javascripts'] = [
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
     '#disabled' => TRUE,
-    0 => $form['javascripts']['disabled_javascripts'],
+    '#title' => 'Old settings (readonly)',
+    '#tree' => FALSE,
+    0 => $form['javascripts']['eu_cookie_compliance']['disabled_javascripts'],
   ];
 
-  $form['javascripts']['link_to_loom_cookie'] = [
+  $form['javascripts']['eu_cookie_compliance']['link_to_loom_cookie'] = [
     '#markup' => t('<strong>This feature has been replaced by the <a href="@link">LOOM Cookie</a> module.</strong>', [
-      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
-        ->toString(),
+      '@link' => $overview_url,
     ]),
     '#weight' => -10,
   ];
-
   // add link to our module settings in consent storage section
   $form['consent_storage']['link_to_loom_cookie'] = [
     '#markup' => t('<strong>See <a href="@link">here</a> for more options.</strong>', [
-      '@link' => Url::fromRoute('loom.cookie.settings')
-        ->toString(),
+      '@link' => '/admin/config/system/eu-cookie-compliance/loom-cookie',
     ]),
   ];
 
@@ -124,41 +163,31 @@ function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
 
   $form['cookies']['link_to_loom_cookie'] = [
     '#markup' => t('<strong>This is automatically set by the <a href="@link">LOOM Cookie</a> module.</strong>', [
-      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
-        ->toString(),
+      '@link' => $overview_url,
     ]),
     '#weight' => -10,
   ];
 
-  $form['consent_per_category']['cookie_categories']['#disabled'] = TRUE;
-  $form['consent_per_category']['link_to_loom_cookie'] = [
+  $form['consent_per_category']['eu_cookie_compliance']['cookie_categories']['#disabled'] = TRUE;
+  $form['consent_per_category']['eu_cookie_compliance']['link_to_loom_cookie'] = [
     '#markup' => t('<strong>The cookie categories are automatically set by the <a href="@link">LOOM Cookie</a> module.</strong>', [
-      '@link' => Url::fromRoute('loom.cookie.entity.category.collection')
-        ->toString(),
+      '@link' => $overview_url,
     ]),
     '#weight' => -10,
   ];
-
-  unset($form['popup_message']['show_more_info']['#states']['visible']["input[name='method']"]);
 }
 
 /**
  * Implements hook_preprocess_HOOK().
  *
  * @param array $vars
- *
- * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
- * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
   if (empty($vars['cookie_categories'])) {
     return;
   }
 
-  /** @var CategoryInterface[] $categories */
-  $categories = Drupal::entityTypeManager()
-    ->getStorage('loom_cookie_category')
-    ->loadMultiple();
+  $categories = loom_cookie_get_categories();
 
   foreach ($vars['cookie_categories'] as $cat_id => &$cookie_category) {
     $category = $categories[$cat_id];
@@ -166,26 +195,213 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
     $cookie_category['id'] = $cat_id;
     $cookie_category['label'] = $category->label();
     if (!empty($category->description)) {
-      $cookie_category['description'] = Markup::create($category->description['value']);
+      $cookie_category['description'] = $category->description['value'];
     }
     if (!empty($category->detailedDescription['value'])) {
-      $cookie_category['detailed_description'] = Markup::create($category->detailedDescription['value']);
+      $cookie_category['detailed_description'] = $category->detailedDescription['value'];
     }
   }
 }
 
 /**
- * Implements hook_cron().
+ * Implements hook_page_build().
+ *
+ * @param array $page
  */
-function loom_cookie_cron() {
-  // delete old consent entries
-  $consent_entry_lifetime = Drupal::config('loom_cookie.settings')
-    ->get('consent_storage.lifetime');
-  $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
+function loom_cookie_page_build(&$page) {
+  // only on frontend pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
 
-  Drupal::database()->delete('eu_cookie_compliance_basic_consent')
-    ->condition('timestamp', $max_possible_timestamp, '<')
-    ->execute();
+  $categories = loom_cookie_get_categories();
+
+  $js_settings = [];
+
+  foreach ($categories as $category) {
+    $scriptUrlRegexesClientSide = loom_cookie_multiline_split($category->scriptUrlRegexesClientSide);
+    if (!empty($scriptUrlRegexesClientSide)) {
+
+      $script_url_regexes = str_replace('/', '\/', $scriptUrlRegexesClientSide);
+      $big_regex = !empty($script_url_regexes)
+        ? '^(' . implode('|', $script_url_regexes) . ')$'
+        : '';
+
+      if ($big_regex) {
+        $js_settings[$category->id]['clientSideBlockedScripts'] = $big_regex;
+      }
+    }
+  }
+
+  drupal_add_js(['loom_cookie' => $js_settings], ['type' => 'setting']);
+
+  // insert script that re-enables scripts when the category gets allowed
+  drupal_add_js(drupal_get_path('module', 'loom_cookie') . '/js/loom-cookie.js', [
+    'group' => JS_DEFAULT,
+    'weight' => -100,
+  ]);
+  // add styles
+  drupal_add_css(drupal_get_path('module', 'loom_cookie') . '/css/loom-cookie.css');
+}
+
+/**
+ * Implements hook_exit().
+ */
+function loom_cookie_exit() {
+  // only on frontend pages
+  if (path_is_admin(current_path())) {
+    return;
+  }
+
+  // get html output and remove it from the output buffer
+  $content = ob_get_contents();
+  ob_clean();
+
+  $categories = loom_cookie_get_categories();
+
+  // collect regexes by category for performance reasons
+  $url_regexes_by_category = [];
+  $block_regexes_by_category = [];
+  $embed_url_regexes_by_category = [];
+  foreach ($categories as $category) {
+    $scriptUrlRegexes = loom_cookie_multiline_split($category->scriptUrlRegexes);
+    $scriptBlockRegexes = loom_cookie_multiline_split($category->scriptBlockRegexes);
+    $embedUrlRegexes = loom_cookie_multiline_split($category->embedUrlRegexes);
+
+    $url_regexes_by_category[$category->id()] = !empty($scriptUrlRegexes)
+      ? '%^(' . implode('|', $scriptUrlRegexes) . ')$%imsU'
+      : NULL;
+
+    $block_regexes_by_category[$category->id()] = !empty($scriptBlockRegexes)
+      ? /** @lang RegExp */
+      '%<script.*>(' . implode('|', $scriptBlockRegexes) . ')</script>%imsU'
+      : NULL;
+
+    $embed_url_regexes_by_category[$category->id()] = !empty($embedUrlRegexes)
+      ? '%^(' . implode('|', $embedUrlRegexes) . ')$%imsU'
+      : NULL;
+  }
+
+  loom_cookie_filter_scripts($categories,
+    $url_regexes_by_category,
+    $block_regexes_by_category, $content);
+
+  loom_cookie_filter_embeds($embed_url_regexes_by_category,
+    $content);
+
+  // send modified output
+  echo $content;
+}
+
+function loom_cookie_filter_scripts($categories, $url_regexes_by_category, $block_regexes_by_category, &$content) {
+  $content = preg_replace_callback(
+    '%<script[^>]*>.*</script>%imsU',
+    function ($script_element) use ($categories, $url_regexes_by_category, $block_regexes_by_category) {
+      $whole_tag = $script_element[0];
+      $script_element = $script_element[0];
+
+      foreach ($categories as $category) {
+        $category_id = $category->id();
+
+        preg_match('%<script(?> .*)* src=["\'](.*)["\'][^>]*>%im',
+          $script_element, $matches);
+        if (!empty($matches)) {
+          // it is a script tag with src attribute
+
+          $big_url_regex = $url_regexes_by_category[$category_id];
+          if ($big_url_regex) {
+            $src = trim($matches[1]);
+            if (preg_match($big_url_regex, $src)) {
+              // replace url with empty data url
+              $whole_tag = str_replace($src, 'data:,', $whole_tag);
+
+              // add url to be restored by JS
+              $whole_tag = str_replace(
+                '<script',
+                '<script data-loom-cookie-category="' . $category_id . '"' .
+                ' data-loom-cookie-src="' . $src . '"',
+                $whole_tag);
+
+              // replace this element
+              return $whole_tag;
+            }
+          }
+        }
+        else {
+          // it is a script block
+
+          $big_block_regex = $block_regexes_by_category[$category_id];
+          if ($big_block_regex) {
+            if (preg_match($big_block_regex, $script_element)) {
+              // replace script block with empty script tag and add original
+              // content as attribute
+              $whole_tag = preg_replace_callback(
+                '%(?<begin><script.*)>(?<script_content>.+)(?<end></script>)%imsU',
+                function ($matches) use ($category_id) {
+                  return $matches['begin'] .
+                    ' data-loom-cookie-category="' . $category_id . '"' .
+                    ' data-loom-cookie-type="script-block"' .
+                    ' data-loom-cookie-content="' . htmlentities($matches['script_content']) . '"' .
+                    '>' .
+                    $matches['end'];
+                },
+                $whole_tag);
+
+              // replace this element
+              return $whole_tag;
+            }
+          }
+        }
+      }
+
+      // no replacement necessary
+      return $script_element;
+    }, $content);
+}
+
+function loom_cookie_filter_embeds($embed_url_regexes_by_category, &$content) {
+  $content = preg_replace_callback(
+    '%<iframe.+src="(?<src_iframe>.*)".*>.*</iframe>|<embed.+src="(?<src_embed>.*)"[^>]*\s?/?>%imsU',
+    function ($element) use ($embed_url_regexes_by_category) {
+      $whole_tag = $element[0];
+      if (!empty($element['src_iframe'])) {
+        // it is an iframe
+        $src = trim($element['src_iframe']);
+        $tag = 'iframe';
+      }
+      elseif (!empty($element['src_embed'])) {
+        // it is an embed
+        $src = trim($element['src_embed']);
+        $tag = 'embed';
+      }
+      else {
+        return $whole_tag;
+      }
+
+      foreach ($embed_url_regexes_by_category as $category_id => $big_url_regex) {
+        if (empty($big_url_regex)) {
+          continue;
+        }
+
+        if (preg_match($big_url_regex, $src)) {
+          // replace url with empty data url
+          $whole_tag = str_replace($src, 'data:,', $whole_tag);
+
+          // add url to be restored by JS
+          $whole_tag = str_replace(
+            '<' . $tag,
+            '<' . $tag . ' data-loom-cookie-category="' . $category_id . '"' .
+            ' data-loom-cookie-src="' . $src . '"',
+            $whole_tag);
+
+          // replace this element
+          return $whole_tag;
+        }
+      }
+
+      // no replacement necessary
+      return $whole_tag;
+    }, $content);
 }
 
 /**
@@ -197,4 +413,51 @@ function loom_cookie_eu_cookie_compliance_path_match_alter(&$excluded) {
   // Never disable eu_cookie_compliance based on the path.
   // We just hide the banner popup by custom code.
   $excluded = FALSE;
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * @param $vars
+ */
+function loom_cookie_preprocess_html(&$vars) {
+  // hide cookie banner on specific pages
+  $ecc_config = loom_cookie_get_ecc_settings();
+  $path = current_path();
+  $url_alias_path = drupal_get_path_alias($path);
+  $exclude_paths = $ecc_config['exclude_paths'];
+  $path_match = drupal_match_path($path, $exclude_paths);
+  $path_match_url_alias = drupal_match_path($url_alias_path, $exclude_paths);
+  if ($path_match || $path_match_url_alias) {
+    $vars['classes_array'][] = 'hide-cookie-banner';
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ *
+ * @param $owner
+ * @param $plugin_type
+ *
+ * @return string|null
+ */
+function loom_cookie_ctools_plugin_directory($owner, $plugin_type) {
+  if (($owner == 'eu_cookie_compliance' || $owner == 'euccx') && !empty($plugin_type)) {
+    return "plugins/$plugin_type";
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function loom_cookie_cron() {
+  // delete old consent entries
+  $consent_entry_lifetime = loom_cookie_get_settings('consent_storage')['lifetime'];
+  $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
+
+  db_delete('eu_cookie_compliance_basic_consent')
+    ->condition('timestamp', $max_possible_timestamp, '<')
+    ->execute();
 }

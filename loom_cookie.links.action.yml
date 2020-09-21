@@ -1,5 +1,0 @@
-loom.cookie.entity.category.add:
-  route_name: 'loom.cookie.entity.category.add'
-  title: 'Add category'
-  appears_on:
-    - loom.cookie.entity.category.collection

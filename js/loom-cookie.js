@@ -161,11 +161,16 @@
       Drupal.eu_cookie_compliance.withdrawAction = () => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
-        let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
-          'undefined' || drupalSettings.eu_cookie_compliance.cookie_name === '')
+        let cookieName = (typeof Drupal.settings.eu_cookie_compliance.cookie_name ===
+          'undefined' || Drupal.settings.eu_cookie_compliance.cookie_name === '')
           ? 'cookie-agreed'
-          : drupalSettings.eu_cookie_compliance.cookie_name;
-        $.removeCookie(cookieName, {path: '/'});
+          : Drupal.settings.eu_cookie_compliance.cookie_name;
+        if (typeof $.removeCookie !== 'undefined') {
+          $.removeCookie(cookieName);
+        }
+        else {
+          $.cookie(cookieName, null, { path: '/' });
+        }
         location.reload();
       };
 
