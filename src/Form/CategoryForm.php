@@ -302,6 +302,14 @@ class CategoryForm extends EntityForm {
         ],
     ];
 
+    $form['embeds']['embedMessage'] = [
+      '#type' => 'textarea',
+      '#title' => 'Nachricht, die anstelle eines geblockten Embeds/iFrames angezeigt werden soll',
+      '#default_value' => $category->embedMessage,
+      '#description' => 'Sie können <code>&lt;a href="#" onclick="Drupal.behaviors.loom_cookie_filter_scripts.reopenBanner(); return false;"&gt;click&lt;/a&gt;</code> ' .
+        'nutzen, um einen Link einzufügen, der den Cookiebanner öffnet.',
+    ];
+
     return $form;
   }
 

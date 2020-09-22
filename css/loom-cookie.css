@@ -7,3 +7,19 @@ body.hide-cookie-banner #sliding-popup * {
   height: 0 !important;
   width: 0 !important;
 }
+
+.loom-cookie-iframe-wrapper {
+  position: relative;
+  display: inline-block;
+  overflow: auto;
+}
+
+.loom-cookie-iframe-wrapper iframe {
+  visibility: hidden;
+}
+
+.loom-cookie-iframe-message {
+  top: 0;
+  left: 0;
+  position: absolute;
+}

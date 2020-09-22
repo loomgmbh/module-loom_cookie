@@ -104,6 +104,8 @@ class Category extends ConfigEntityBase implements CategoryInterface {
    */
   public $embedUrlRegexes = [];
 
+  public $embedMessage = '';
+
   public static function preCreate(EntityStorageInterface $storage, array &$values) {
     $ids = Drupal::entityQuery('loom_cookie_category')
       ->sort('weight', 'DESC')

@@ -38,6 +38,8 @@
       }
 
       script.enableElements();
+
+      script.showOverlays();
     },
 
     settings: [],
@@ -158,7 +160,7 @@
     modifyEUCookieComplianceFunctions: () => {
       // click on "Withdraw consent" -> reset category settings and reload in
       // order to show the banner again
-      Drupal.eu_cookie_compliance.withdrawAction = () => {
+      Drupal.eu_cookie_compliance.withdrawAction = (reload = true) => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
         let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
@@ -166,7 +168,10 @@
           ? 'cookie-agreed'
           : drupalSettings.eu_cookie_compliance.cookie_name;
         $.removeCookie(cookieName, {path: '/'});
-        location.reload();
+        if (reload) {
+          location.reload();
+        }
+        Drupal.eu_cookie_compliance.execute();
       };
 
       // set extra class for styling purposes
@@ -177,6 +182,34 @@
         $('.eu-cookie-withdraw-wrapper')
           .toggleClass('eu-cookie-withdraw-wrapper-open');
       };
+    },
+
+    showOverlays: () => {
+      $('iframe[data-loom-cookie-category]').each((n, el) => {
+        let $iframe = $(el);
+        if ($iframe.closest('.loom-cookie-iframe-wrapper').length) {
+          return;
+        }
+        $iframe.wrap('<div class="loom-cookie-iframe-wrapper">');
+        let $wrapper = $iframe.parent();
+        $wrapper.append(
+          '<span class="loom-cookie-iframe-message">' +
+          $iframe.attr('data-loom-cookie-message') + '</span>');
+      });
+    },
+
+    /**
+     * Open banner without resetting the selected categories.
+     */
+    reopenBanner: () => {
+      Drupal.eu_cookie_compliance.withdrawAction(false);
+      script.enabledCategories.forEach(categoryId => {
+        $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
+          .prop('checked', 'checked');
+      });
+      $.cookie('cookie-agreed-categories',
+        JSON.stringify(script.enabledCategories), {path: '/'});
+      $.cookie('cookie-agreed', 2, {path: '/'});
     },
   };
 

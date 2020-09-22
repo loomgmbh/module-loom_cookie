@@ -41,6 +41,9 @@ loom_cookie.category.*:
       label: 'Embed URL regexes'
       sequence:
         type: string
+    embedMessage:
+      type: text
+      label: 'Embed Message'
     description:
       type: text_format
       label: 'Description'

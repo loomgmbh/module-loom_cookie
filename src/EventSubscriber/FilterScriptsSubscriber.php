@@ -56,7 +56,7 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
       $url_regexes_by_category,
       $block_regexes_by_category, $content);
 
-    $this->filterEmbeds($embed_url_regexes_by_category,
+    $this->filterEmbeds($categories, $embed_url_regexes_by_category,
       $content);
 
     // modify the output
@@ -67,13 +67,14 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
   /**
    * Replace urls of iframes and embeds.
    *
+   * @param CategoryInterface[] $categories
    * @param $embed_url_regexes_by_category
    * @param $content
    */
-  private function filterEmbeds($embed_url_regexes_by_category, &$content) {
+  private function filterEmbeds($categories, $embed_url_regexes_by_category, &$content) {
     $content = preg_replace_callback(
       '%<iframe.+src="(?<src_iframe>.*)".*>.*</iframe>|<embed.+src="(?<src_embed>.*)"[^>]*\s?/?>%imsU',
-      function ($element) use ($embed_url_regexes_by_category) {
+      function ($element) use ($embed_url_regexes_by_category, $categories) {
         $whole_tag = $element[0];
         if (!empty($element['src_iframe'])) {
           // it is an iframe
@@ -101,8 +102,10 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
             // add url to be restored by JS
             $whole_tag = str_replace(
               '<' . $tag,
-              '<' . $tag . ' data-loom-cookie-category="' . $category_id . '"' .
-              ' data-loom-cookie-src="' . $src . '"',
+              '<' . $tag .
+              ' data-loom-cookie-category="' . $category_id . '"' .
+              ' data-loom-cookie-src="' . $src . '"' .
+              ' data-loom-cookie-message="' . htmlspecialchars($categories[$category_id]->embedMessage) . '"',
               $whole_tag);
 
             // replace this element
