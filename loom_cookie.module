@@ -39,6 +39,15 @@ function loom_cookie_menu() {
     'type' => MENU_LOCAL_ACTION,
   ];
 
+  $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories/export'] = [
+    'title' => 'Loom Cookie: Export categories',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => ['loom_cookie_categories_export_form'],
+    'access arguments' => $access,
+    'file' => 'includes/loom_cookie.categories.export.inc',
+    'type' => MENU_LOCAL_ACTION,
+  ];
+
   $items['admin/config/system/eu-cookie-compliance/loom-cookie/categories/%/edit'] = [
     'title' => 'Loom Cookie: Categories',
     'page callback' => 'drupal_get_form',
@@ -74,9 +83,11 @@ function loom_cookie_get_settings($setting = 'all') {
 }
 
 /**
- * @return Category[]
+ * @param bool $as_objects (default: true)
+ *
+ * @return Category[]|array[]
  */
-function loom_cookie_get_categories() {
+function loom_cookie_get_categories($as_objects = TRUE) {
   $langcode = i18n_langcode();
 
   variable_realm_initialize('language', $langcode);
@@ -88,19 +99,33 @@ function loom_cookie_get_categories() {
 
   /** @var Category[] $categories */
   $categories = array_filter(array_map(function ($key) use ($conf) {
-    $category = new Category($conf[$key]);
-    $category->isNew = FALSE;
-    return $category;
+    if (!empty($conf[$key])) {
+      return $conf[$key];
+    }
+
+    return NULL;
   }, $keys));
 
   $categories_by_id = [];
   foreach ($categories as $category) {
-    $categories_by_id[$category->id] = $category;
+    $categories_by_id[$category['id']] = $category;
   }
 
   uasort($categories_by_id, function ($a, $b) {
-    return $a->weight < $b->weight ? -1 : 1;
+    $weight_a = !empty($a['weight']) ? $a['weight'] : 0;
+    $weight_b = !empty($b['weight']) ? $b['weight'] : 0;
+    return $weight_a < $weight_b ? -1 : 1;
   });
+
+  if ($as_objects) {
+    return array_map(
+      function ($item) {
+        $category = new Category($item);
+        $category->isNew = FALSE;
+        return $category;
+      }, $categories_by_id
+    );
+  }
 
   return $categories_by_id;
 }

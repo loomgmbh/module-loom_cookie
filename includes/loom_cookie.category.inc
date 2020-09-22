@@ -382,7 +382,7 @@ function loom_cookie_category_form_submit(array $form, array &$form_state) {
     $variable = $form_state['input'][$variable_name];
 
     // sync non-translatable fields
-    $nontranslatableFields = [
+    $nontranslatable_fields = [
       'cookies',
       'scriptUrlRegexes',
       'scriptBlockRegexes',
@@ -392,7 +392,7 @@ function loom_cookie_category_form_submit(array $form, array &$form_state) {
     $category = new Category($variable);
     $category->id = str_replace('loom_cookie_category__', '', $variable_name);
     $category->isNew = FALSE;
-    foreach ($nontranslatableFields as $field) {
+    foreach ($nontranslatable_fields as $field) {
       $category->set($field, $category->$field);
     }
   }
