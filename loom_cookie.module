@@ -246,7 +246,6 @@ function loom_cookie_page_build(&$page) {
   foreach ($categories as $category) {
     $scriptUrlRegexesClientSide = loom_cookie_multiline_split($category->scriptUrlRegexesClientSide);
     if (!empty($scriptUrlRegexesClientSide)) {
-
       $script_url_regexes = str_replace('/', '\/', $scriptUrlRegexesClientSide);
       $big_regex = !empty($script_url_regexes)
         ? '^(' . implode('|', $script_url_regexes) . ')$'
@@ -311,7 +310,7 @@ function loom_cookie_exit() {
     $url_regexes_by_category,
     $block_regexes_by_category, $content);
 
-  loom_cookie_filter_embeds($embed_url_regexes_by_category,
+  loom_cookie_filter_embeds($categories, $embed_url_regexes_by_category,
     $content);
 
   // send modified output
@@ -384,10 +383,15 @@ function loom_cookie_filter_scripts($categories, $url_regexes_by_category, $bloc
     }, $content);
 }
 
-function loom_cookie_filter_embeds($embed_url_regexes_by_category, &$content) {
+/**
+ * @param \Category[] $categories
+ * @param $embed_url_regexes_by_category
+ * @param $content
+ */
+function loom_cookie_filter_embeds($categories, $embed_url_regexes_by_category, &$content) {
   $content = preg_replace_callback(
     '%<iframe.+src="(?<src_iframe>.*)".*>.*</iframe>|<embed.+src="(?<src_embed>.*)"[^>]*\s?/?>%imsU',
-    function ($element) use ($embed_url_regexes_by_category) {
+    function ($element) use ($embed_url_regexes_by_category, $categories) {
       $whole_tag = $element[0];
       if (!empty($element['src_iframe'])) {
         // it is an iframe
@@ -415,8 +419,10 @@ function loom_cookie_filter_embeds($embed_url_regexes_by_category, &$content) {
           // add url to be restored by JS
           $whole_tag = str_replace(
             '<' . $tag,
-            '<' . $tag . ' data-loom-cookie-category="' . $category_id . '"' .
-            ' data-loom-cookie-src="' . $src . '"',
+            '<' . $tag .
+            ' data-loom-cookie-category="' . $category_id . '"' .
+            ' data-loom-cookie-src="' . $src . '"' .
+            ' data-loom-cookie-message="' . htmlspecialchars($categories[$category_id]->embedMessage) . '"',
             $whole_tag);
 
           // replace this element

@@ -39,6 +39,7 @@ function loom_cookie_categories_export_form(array $form, array $form_state) {
     'label',
     'description',
     'detailedDescription',
+    'embedMessage',
   ];
 
   foreach ($categories as &$category) {

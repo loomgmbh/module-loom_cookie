@@ -347,6 +347,13 @@ function loom_cookie_category_form(array $form, array $form_state, $category_id 
     '#title' => 'Embed-URLs (Embeds + iFrames)',
     '#default_value' => $category->embedUrlRegexes,
   ];
+  $form['embeds']['embedUrlRegexes_wrapper'][$variable_name]['embedMessage'] = [
+    '#type' => 'textarea',
+    '#title' => 'Nachricht, die anstelle eines geblockten Embeds/iFrames angezeigt werden soll',
+    '#default_value' => $category->embedMessage,
+    '#description' => ('Sie können <code>&lt;a href="#" onclick="Drupal.behaviors.loom_cookie_filter_scripts.reopenBanner(); return false;"&gt;click&lt;/a&gt;</code> ' .
+      'nutzen, um einen Link einzufügen, der den Cookiebanner öffnet.'),
+  ];
 
   $form['actions'] = ['#type' => 'actions'];
   $form['actions']['submit'] = [

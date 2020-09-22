@@ -15,9 +15,16 @@
 function loom_cookie_variable_info($options) {
   // insert predefined categories
   $predefined_categories = variable_get('loom_cookie_predefined_categories', []);
+  $override_categories = variable_get('loom_cookie_override_categories', FALSE);
 
   foreach ($predefined_categories as $item) {
     if (empty($item['id'])) {
+      continue;
+    }
+
+    $variable_name = 'loom_cookie_category__' . $item['id'];
+
+    if (!$override_categories && variable_get($variable_name) != NULL) {
       continue;
     }
 
@@ -29,7 +36,6 @@ function loom_cookie_variable_info($options) {
       $translations = [];
     }
 
-    $variable_name = 'loom_cookie_category__' . $item['id'];
 
     if (!empty($translations)) {
       $default_langcode = language_default('language');

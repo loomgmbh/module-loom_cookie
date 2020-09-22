@@ -1,14 +1,14 @@
-(function ($) {
+(function($) {
 
   var script = {
 
-    attach: function (context, settings) {
+    attach: function(context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
 
       // apply Drupal behaviors to popup
-      $(document).on('eu_cookie_compliance_popup_open', function () {
+      $(document).on('eu_cookie_compliance_popup_open', function() {
         Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
       });
 
@@ -38,6 +38,8 @@
       }
 
       script.enableElements();
+
+      script.showOverlays();
     },
 
     settings: [],
@@ -86,7 +88,7 @@
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function (name, value) {
+        scriptElt.setAttribute = function(name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }
@@ -158,20 +160,24 @@
     modifyEUCookieComplianceFunctions: () => {
       // click on "Withdraw consent" -> reset category settings and reload in
       // order to show the banner again
-      Drupal.eu_cookie_compliance.withdrawAction = () => {
+      Drupal.eu_cookie_compliance.withdrawAction = (reload = true) => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
         let cookieName = (typeof Drupal.settings.eu_cookie_compliance.cookie_name ===
-          'undefined' || Drupal.settings.eu_cookie_compliance.cookie_name === '')
+          'undefined' || Drupal.settings.eu_cookie_compliance.cookie_name ===
+          '')
           ? 'cookie-agreed'
           : Drupal.settings.eu_cookie_compliance.cookie_name;
         if (typeof $.removeCookie !== 'undefined') {
           $.removeCookie(cookieName);
         }
         else {
-          $.cookie(cookieName, null, { path: '/' });
+          $.cookie(cookieName, null, {path: '/'});
         }
-        location.reload();
+        if (reload) {
+          location.reload();
+        }
+        Drupal.eu_cookie_compliance.execute();
       };
 
       // set extra class for styling purposes
@@ -182,6 +188,34 @@
         $('.eu-cookie-withdraw-wrapper')
           .toggleClass('eu-cookie-withdraw-wrapper-open');
       };
+    },
+
+    showOverlays: () => {
+      $('iframe[data-loom-cookie-category]').each((n, el) => {
+        let $iframe = $(el);
+        if ($iframe.closest('.loom-cookie-iframe-wrapper').length) {
+          return;
+        }
+        $iframe.wrap('<div class="loom-cookie-iframe-wrapper">');
+        let $wrapper = $iframe.parent();
+        $wrapper.append(
+          '<span class="loom-cookie-iframe-message">' +
+          $iframe.attr('data-loom-cookie-message') + '</span>');
+      });
+    },
+
+    /**
+     * Open banner without resetting the selected categories.
+     */
+    reopenBanner: () => {
+      Drupal.eu_cookie_compliance.withdrawAction(false);
+      script.enabledCategories.forEach(categoryId => {
+        $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
+          .prop('checked', 'checked');
+      });
+      $.cookie('cookie-agreed-categories',
+        JSON.stringify(script.enabledCategories), {path: '/'});
+      $.cookie('cookie-agreed', 2, {path: '/'});
     },
   };
 

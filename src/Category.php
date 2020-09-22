@@ -63,10 +63,29 @@ class Category {
    */
   public $embedUrlRegexes = '';
 
+  public $embedMessage;
+
   public $isNew = TRUE;
 
   public function __construct($values = []) {
-    $this->setValues($values);
+    $fields = [
+      'label',
+      'id',
+      'weight',
+      'description',
+      'detailedDescription',
+      'cookies',
+      'scriptUrlRegexes',
+      'scriptBlockRegexes',
+      'scriptUrlRegexesClientSide',
+      'embedUrlRegexes',
+      'embedMessage',
+    ];
+    foreach ($fields as $field) {
+      if (!empty($values[$field])) {
+        $this->$field = $values[$field];
+      }
+    }
   }
 
   public static function load($id) {
@@ -83,39 +102,6 @@ class Category {
     }
 
     return NULL;
-  }
-
-  public function setValues($values) {
-    if (!empty($values['label'])) {
-      $this->label = $values['label'];
-    }
-    if (!empty($values['id'])) {
-      $this->id = $values['id'];
-    }
-    if (isset($values['weight'])) {
-      $this->weight = $values['weight'];
-    }
-    if (!empty($values['description'])) {
-      $this->description = $values['description'];
-    }
-    if (!empty($values['detailedDescription'])) {
-      $this->detailedDescription = $values['detailedDescription'];
-    }
-    if (!empty($values['cookies'])) {
-      $this->cookies = $values['cookies'];
-    }
-    if (!empty($values['scriptUrlRegexes'])) {
-      $this->scriptUrlRegexes = $values['scriptUrlRegexes'];
-    }
-    if (!empty($values['scriptBlockRegexes'])) {
-      $this->scriptBlockRegexes = $values['scriptBlockRegexes'];
-    }
-    if (!empty($values['scriptUrlRegexesClientSide'])) {
-      $this->scriptUrlRegexesClientSide = $values['scriptUrlRegexesClientSide'];
-    }
-    if (!empty($values['embedUrlRegexes'])) {
-      $this->embedUrlRegexes = $values['embedUrlRegexes'];
-    }
   }
 
   public static function updateEUCookieComplianceSettings() {
