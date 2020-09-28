@@ -456,11 +456,13 @@ function loom_cookie_preprocess_html(&$vars) {
   $ecc_config = loom_cookie_get_ecc_settings();
   $path = current_path();
   $url_alias_path = drupal_get_path_alias($path);
-  $exclude_paths = $ecc_config['exclude_paths'];
-  $path_match = drupal_match_path($path, $exclude_paths);
-  $path_match_url_alias = drupal_match_path($url_alias_path, $exclude_paths);
-  if ($path_match || $path_match_url_alias) {
-    $vars['classes_array'][] = 'hide-cookie-banner';
+  if (!empty($ecc_config['exclude_paths'])) {
+    $exclude_paths = $ecc_config['exclude_paths'];
+    $path_match = drupal_match_path($path, $exclude_paths);
+    $path_match_url_alias = drupal_match_path($url_alias_path, $exclude_paths);
+    if ($path_match || $path_match_url_alias) {
+      $vars['classes_array'][] = 'hide-cookie-banner';
+    }
   }
 }
 

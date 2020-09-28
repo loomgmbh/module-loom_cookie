@@ -5,6 +5,7 @@
  */
 function loom_cookie_install() {
   loom_cookie_update_7001();
+  loom_cookie_update_7002();
 }
 
 /**
@@ -28,5 +29,20 @@ function loom_cookie_update_7001() {
     // Activate consent storage.
     'consent_storage_method' => 'loom_cookie',
   ]);
+}
 
+/**
+ * Set permissions
+ */
+function loom_cookie_update_7002() {
+  $permission = 'display EU Cookie Compliance popup';
+  $roles = user_roles();
+  foreach ($roles as $rid => $value) {
+    if ($value) {
+      user_role_grant_permissions($rid, [$permission]);
+    }
+    else {
+      user_role_revoke_permissions($rid, [$permission]);
+    }
+  }
 }
