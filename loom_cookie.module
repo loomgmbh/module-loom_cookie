@@ -234,8 +234,10 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
  * @param array $page
  */
 function loom_cookie_page_build(&$page) {
-  // only on frontend pages
-  if (path_is_admin(current_path())) {
+  // add styles
+  drupal_add_css(drupal_get_path('module', 'loom_cookie') . '/css/loom-cookie.css');
+
+  if (loom_cookie_is_path_exluded()) {
     return;
   }
 
@@ -264,16 +266,22 @@ function loom_cookie_page_build(&$page) {
     'group' => JS_DEFAULT,
     'weight' => -100,
   ]);
-  // add styles
-  drupal_add_css(drupal_get_path('module', 'loom_cookie') . '/css/loom-cookie.css');
+}
+
+function loom_cookie_is_path_exluded() {
+  // only on frontend pages
+  $path = current_path();
+  return path_is_admin($path)
+    || substr($path, -5) == '/edit'
+    || substr($path, -10) == '/edit/ajax'
+    || substr($path, -12) == 'ckeditor/xss';
 }
 
 /**
  * Implements hook_exit().
  */
 function loom_cookie_exit() {
-  // only on frontend pages
-  if (path_is_admin(current_path())) {
+  if (loom_cookie_is_path_exluded()) {
     return;
   }
 

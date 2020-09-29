@@ -158,9 +158,9 @@
     },
 
     modifyEUCookieComplianceFunctions: () => {
-      // click on "Withdraw consent" -> reset category settings and reload in
-      // order to show the banner again
-      Drupal.eu_cookie_compliance.withdrawAction = (reload = true) => {
+      // click on "Withdraw consent" -> show the banner again (no reset of the
+      // settings)
+      Drupal.eu_cookie_compliance.withdrawAction = () => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
         let cookieName = (typeof Drupal.settings.eu_cookie_compliance.cookie_name ===
@@ -168,25 +168,25 @@
           '')
           ? 'cookie-agreed'
           : Drupal.settings.eu_cookie_compliance.cookie_name;
-        if (typeof $.removeCookie !== 'undefined') {
-          $.removeCookie(cookieName);
-        }
-        else {
+        if (typeof $.removeCookie !== 'undefined' ||
+          $.removeCookie(cookieName) == false) {
           $.cookie(cookieName, null, {path: '/'});
         }
-        if (reload) {
-          location.reload();
-        }
+
         Drupal.eu_cookie_compliance.execute();
+
+        script.enabledCategories.forEach(categoryId => {
+          $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
+            .prop('checked', 'checked');
+        });
+        $.cookie('cookie-agreed-categories',
+          JSON.stringify(script.enabledCategories), {path: '/'});
+        $.cookie('cookie-agreed', 2, {path: '/'});
       };
 
-      // set extra class for styling purposes
-      let origToggleWithdrawBanner = Drupal.eu_cookie_compliance.toggleWithdrawBanner;
+      // One-Click for reopening the banner
       Drupal.eu_cookie_compliance.toggleWithdrawBanner = () => {
-        origToggleWithdrawBanner();
-
-        $('.eu-cookie-withdraw-wrapper')
-          .toggleClass('eu-cookie-withdraw-wrapper-open');
+        Drupal.eu_cookie_compliance.withdrawAction();
       };
     },
 
@@ -208,14 +208,7 @@
      * Open banner without resetting the selected categories.
      */
     reopenBanner: () => {
-      Drupal.eu_cookie_compliance.withdrawAction(false);
-      script.enabledCategories.forEach(categoryId => {
-        $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
-          .prop('checked', 'checked');
-      });
-      $.cookie('cookie-agreed-categories',
-        JSON.stringify(script.enabledCategories), {path: '/'});
-      $.cookie('cookie-agreed', 2, {path: '/'});
+      Drupal.eu_cookie_compliance.withdrawAction();
     },
   };
 
