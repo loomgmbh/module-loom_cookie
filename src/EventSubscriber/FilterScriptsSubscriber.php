@@ -30,6 +30,10 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
     $response = $event->getResponse();
     $content = $response->getContent();
 
+    // don`t change empty request, like StreamedResponse or BinaryFileResponse
+    // Fix "LogicException: The content cannot be set on a BinaryFileResponse/StreamedResponse instance."
+    if (!$content) return;
+
     /** @var CategoryInterface[] $categories */
     $categories = Drupal::entityTypeManager()
       ->getStorage('loom_cookie_category')->loadMultiple();
