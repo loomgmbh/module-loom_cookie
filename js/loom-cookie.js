@@ -1,14 +1,14 @@
-(function ($) {
+(function($) {
 
   var script = {
 
-    attach: function (context, settings) {
+    attach: function(context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
 
       // apply Drupal behaviors to popup
-      $(document).on('eu_cookie_compliance_popup_open', function () {
+      $(document).on('eu_cookie_compliance_popup_open', function() {
         Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
       });
 
@@ -88,7 +88,7 @@
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function (name, value) {
+        scriptElt.setAttribute = function(name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }
@@ -158,29 +158,35 @@
     },
 
     modifyEUCookieComplianceFunctions: () => {
-      // click on "Withdraw consent" -> reset category settings and reload in
-      // order to show the banner again
-      Drupal.eu_cookie_compliance.withdrawAction = (reload = true) => {
+      // click on "Withdraw consent" -> show the banner again (no reset of the
+      // settings)
+      Drupal.eu_cookie_compliance.withdrawAction = () => {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
         let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
-          'undefined' || drupalSettings.eu_cookie_compliance.cookie_name === '')
+          'undefined' || drupalSettings.eu_cookie_compliance.cookie_name ===
+          '')
           ? 'cookie-agreed'
           : drupalSettings.eu_cookie_compliance.cookie_name;
-        $.removeCookie(cookieName, {path: '/'});
-        if (reload) {
-          location.reload();
+        if (typeof $.removeCookie !== 'undefined' ||
+          $.removeCookie(cookieName) == false) {
+          $.cookie(cookieName, null, {path: '/'});
         }
+
         Drupal.eu_cookie_compliance.execute();
+
+        script.enabledCategories.forEach(categoryId => {
+          $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
+            .prop('checked', 'checked');
+        });
+        $.cookie('cookie-agreed-categories',
+          JSON.stringify(script.enabledCategories), {path: '/'});
+        $.cookie('cookie-agreed', 2, {path: '/'});
       };
 
-      // set extra class for styling purposes
-      let origToggleWithdrawBanner = Drupal.eu_cookie_compliance.toggleWithdrawBanner;
+      // One-Click for reopening the banner
       Drupal.eu_cookie_compliance.toggleWithdrawBanner = () => {
-        origToggleWithdrawBanner();
-
-        $('.eu-cookie-withdraw-wrapper')
-          .toggleClass('eu-cookie-withdraw-wrapper-open');
+        Drupal.eu_cookie_compliance.withdrawAction();
       };
     },
 
@@ -202,14 +208,7 @@
      * Open banner without resetting the selected categories.
      */
     reopenBanner: () => {
-      Drupal.eu_cookie_compliance.withdrawAction(false);
-      script.enabledCategories.forEach(categoryId => {
-        $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
-          .prop('checked', 'checked');
-      });
-      $.cookie('cookie-agreed-categories',
-        JSON.stringify(script.enabledCategories), {path: '/'});
-      $.cookie('cookie-agreed', 2, {path: '/'});
+      Drupal.eu_cookie_compliance.withdrawAction();
     },
   };
 
