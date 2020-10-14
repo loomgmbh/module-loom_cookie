@@ -1,14 +1,14 @@
-(function($) {
+(function ($) {
 
   var script = {
 
-    attach: function(context, settings) {
+    attach: function (context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
 
       // apply Drupal behaviors to popup
-      $(document).on('eu_cookie_compliance_popup_open', function() {
+      $(document).on('eu_cookie_compliance_popup_open', function () {
         Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
       });
 
@@ -88,7 +88,7 @@
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function(name, value) {
+        scriptElt.setAttribute = function (name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }
@@ -169,8 +169,11 @@
           ? 'cookie-agreed'
           : drupalSettings.eu_cookie_compliance.cookie_name;
         if (typeof $.removeCookie !== 'undefined' ||
-          $.removeCookie(cookieName) == false) {
-          $.cookie(cookieName, null, {path: '/'});
+          $.removeCookie(cookieName, {domain: drupalSettings.eu_cookie_compliance.domain}) == false) {
+          $.cookie(cookieName, null, {
+            path: '/',
+            domain: drupalSettings.eu_cookie_compliance.domain
+          });
         }
 
         Drupal.eu_cookie_compliance.execute();
@@ -180,8 +183,14 @@
             .prop('checked', 'checked');
         });
         $.cookie('cookie-agreed-categories',
-          JSON.stringify(script.enabledCategories), {path: '/'});
-        $.cookie('cookie-agreed', 2, {path: '/'});
+          JSON.stringify(script.enabledCategories), {
+            path: '/',
+            domain: drupalSettings.eu_cookie_compliance.domain
+          });
+        $.cookie('cookie-agreed', 2, {
+          path: '/',
+          domain: drupalSettings.eu_cookie_compliance.domain
+        });
       };
 
       // One-Click for reopening the banner
