@@ -63,12 +63,14 @@ class CategoryForm extends EntityForm {
       '#type' => 'text_format',
       '#title' => $this->t('Description'),
       '#default_value' => $category->description['value'],
+      '#format' => $category->description['format'],
     ];
 
     $form['detailedDescription'] = [
       '#type' => 'text_format',
       '#title' => 'Detailierte Beschreibung',
       '#default_value' => $category->detailedDescription['value'],
+      '#format' => $category->detailedDescription['format'],
       '#description' => 'Kann genutzt werden, um die zu dieser Kategorie gehörenden Cookies und Skripte näher zu beschreiben.',
     ];
 
