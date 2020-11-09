@@ -1,14 +1,14 @@
-(function ($) {
+(function($) {
 
   var script = {
 
-    attach: function (context, settings) {
+    attach: function(context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
       }
 
       // apply Drupal behaviors to popup
-      $(document).on('eu_cookie_compliance_popup_open', function () {
+      $(document).on('eu_cookie_compliance_popup_open', function() {
         Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
       });
 
@@ -88,7 +88,7 @@
         // Monkey patch the setAttribute function so that the setter is called
         // instead. Otherwise, setAttribute('type', 'whatever') will bypass our
         // custom descriptors!
-        scriptElt.setAttribute = function (name, value) {
+        scriptElt.setAttribute = function(name, value) {
           if (name === 'src') {
             scriptElt[name] = value;
           }
@@ -116,6 +116,10 @@
       for (const category of disabledCategories) {
         if (!script.settings[category].clientSideBlockedScripts) {
           continue;
+        }
+
+        if (typeof src == 'object' && src.toString) {
+          src = src.toString();
         }
 
         if (src.match(
@@ -169,10 +173,11 @@
           ? 'cookie-agreed'
           : drupalSettings.eu_cookie_compliance.cookie_name;
         if (typeof $.removeCookie !== 'undefined' ||
-          $.removeCookie(cookieName, {domain: drupalSettings.eu_cookie_compliance.domain}) == false) {
+          $.removeCookie(cookieName,
+            {domain: drupalSettings.eu_cookie_compliance.domain}) == false) {
           $.cookie(cookieName, null, {
             path: '/',
-            domain: drupalSettings.eu_cookie_compliance.domain
+            domain: drupalSettings.eu_cookie_compliance.domain,
           });
         }
 
@@ -185,11 +190,11 @@
         $.cookie('cookie-agreed-categories',
           JSON.stringify(script.enabledCategories), {
             path: '/',
-            domain: drupalSettings.eu_cookie_compliance.domain
+            domain: drupalSettings.eu_cookie_compliance.domain,
           });
         $.cookie('cookie-agreed', 2, {
           path: '/',
-          domain: drupalSettings.eu_cookie_compliance.domain
+          domain: drupalSettings.eu_cookie_compliance.domain,
         });
       };
 
