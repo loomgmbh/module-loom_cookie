@@ -269,9 +269,13 @@ function loom_cookie_page_build(&$page) {
 }
 
 function loom_cookie_is_path_exluded() {
+  // exclude if itok found
+  if (isset($_GET['itok'])){
+    return TRUE;
+  }
   // only on frontend pages
-  $path = current_path();
-  return path_is_admin($path)
+  $path = $_GET['q'];
+  return substr($path, 6) == 'admin/'
     || substr($path, -5) == '/edit'
     || substr($path, -10) == '/edit/ajax'
     || substr($path, -12) == 'ckeditor/xss';
