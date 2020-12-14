@@ -1,7 +1,5 @@
 (function($) {
-
-  var script = {
-
+  let script = {
     attach: function(context, settings) {
       if (!Drupal.eu_cookie_compliance) {
         return;
@@ -27,7 +25,7 @@
         // Click on button "Accept all"
         // -> check all categories and click on "Save" button
         $(document)
-          .on('click', '.eu-cookie-compliance-accept-all-button', (e) => {
+          .on('click', '.eu-cookie-compliance-accept-all-button', function(e) {
             let $popupContent = $(e.target)
               .closest('.eu-cookie-compliance-content');
             $popupContent.find('[name="cookie-categories"]')
@@ -52,16 +50,16 @@
      * HTMLScriptElement.prototype.setAttribute.
      * @see https://medium.com/snips-ai/how-to-block-third-party-scripts-with-a-few-lines-of-javascript-f0b08b9c4c0
      */
-    blockSomeScripts: () => {
-      const createElementBackup = document.createElement;
-      document.createElement = (...args) => {
+    blockSomeScripts: function() {
+      const originalCreateElement = document.createElement.bind(document);
+      document.createElement = function(tagName, options) {
         // If this is not a script tag, bypass
-        if (args[0].toLowerCase() !== 'script') {
+        if (tagName.toLowerCase() !== 'script') {
           // Binding to document is essential
-          return createElementBackup.bind(document)(...args);
+          return originalCreateElement(tagName, options);
         }
 
-        const scriptElt = createElementBackup.bind(document)(...args);
+        const scriptElt = originalCreateElement(tagName, options);
 
         // Backup the original setAttribute function
         const originalSetAttribute = scriptElt.setAttribute.bind(scriptElt);
@@ -70,10 +68,10 @@
         // set
         Object.defineProperties(scriptElt, {
           'src': {
-            get() {
+            get: function() {
               return scriptElt.getAttribute('src');
             },
-            set(value) {
+            set: function(value) {
               if (script.shouldBlockScript(value)) {
                 value = '';
                 originalSetAttribute('type', 'javascript/blocked');
@@ -100,6 +98,45 @@
 
         return scriptElt;
       };
+
+      // Some scripts use navigator.sendBeacon to load further scripts.
+      if (navigator.sendBeacon) {
+        const originalSendBeacon = navigator.sendBeacon.bind(navigator);
+        navigator.sendBeacon = function(url, data) {
+          if (script.shouldBlockScript(url)) {
+            return false;
+          }
+
+          return originalSendBeacon(url, data);
+        };
+      }
+
+      // Some scripts use image elements to load further scripts.
+      const originalImage = window.Image;
+      // noinspection JSValidateTypes
+      window.Image = function(width, height) {
+        let img = new originalImage(width, height);
+
+        const originalSetAttribute = img.setAttribute.bind(img);
+
+        Object.defineProperties(img, {
+          'src': {
+            get: function() {
+              return img.getAttribute('src');
+            },
+            set: function(value) {
+              if (script.shouldBlockScript(value)) {
+                value = '';
+              }
+              originalSetAttribute('src', value);
+              return true;
+            },
+            configurable: true,
+          },
+        });
+
+        return img;
+      };
     },
 
     /**
@@ -108,12 +145,15 @@
      * @param src
      * @returns {boolean}
      */
-    shouldBlockScript: (src) => {
+    shouldBlockScript: function(src) {
       let disabledCategories = Object.keys(script.settings).filter(
-        category => script.enabledCategories.indexOf(category) === -1);
+        function(category) {
+          return script.enabledCategories.indexOf(category) === -1;
+        });
 
       // only block scripts of disabled categories
-      for (const category of disabledCategories) {
+      for (let i in disabledCategories) {
+        const category = disabledCategories[i];
         if (!script.settings[category].clientSideBlockedScripts) {
           continue;
         }
@@ -135,36 +175,38 @@
      * Enable elements that have been blocked server-side based on the
      * enabled categories.
      */
-    enableElements: () => {
+    enableElements: function() {
       if (!script.enabledCategories.length) {
         // no scripts to reenable
         return;
       }
 
-      for (const category of script.enabledCategories) {
-        $('[data-loom-cookie-category="' + category + '"]').each((n, el) => {
-          let $el = $(el);
+      for (let i in script.enabledCategories) {
+        const category = script.enabledCategories[i];
+        $('[data-loom-cookie-category="' + category + '"]').each(
+          function(n, el) {
+            let $el = $(el);
 
-          switch ($el.attr('data-loom-cookie-type')) {
-            case 'script-block':
-              $el.html($el.attr('data-loom-cookie-content'));
-              break;
-            default:
-              $el.attr('src', $el.attr('data-loom-cookie-src'));
-          }
+            switch ($el.attr('data-loom-cookie-type')) {
+              case 'script-block':
+                $el.html($el.attr('data-loom-cookie-content'));
+                break;
+              default:
+                $el.attr('src', $el.attr('data-loom-cookie-src'));
+            }
 
-          $el.attr('data-loom-cookie-category', null);
-          $el.attr('data-loom-cookie-type', null);
-          $el.attr('data-loom-cookie-content', null);
-          $el.attr('data-loom-cookie-src', null);
-        });
+            $el.attr('data-loom-cookie-category', null);
+            $el.attr('data-loom-cookie-type', null);
+            $el.attr('data-loom-cookie-content', null);
+            $el.attr('data-loom-cookie-src', null);
+          });
       }
     },
 
-    modifyEUCookieComplianceFunctions: () => {
+    modifyEUCookieComplianceFunctions: function() {
       // click on "Withdraw consent" -> show the banner again (no reset of the
       // settings)
-      Drupal.eu_cookie_compliance.withdrawAction = () => {
+      Drupal.eu_cookie_compliance.withdrawAction = function() {
         Drupal.eu_cookie_compliance.setStatus(0);
         Drupal.eu_cookie_compliance.setAcceptedCategories([]);
         let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
@@ -183,7 +225,7 @@
 
         Drupal.eu_cookie_compliance.execute();
 
-        script.enabledCategories.forEach(categoryId => {
+        script.enabledCategories.forEach(function(categoryId) {
           $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
             .prop('checked', 'checked');
         });
@@ -199,13 +241,13 @@
       };
 
       // One-Click for reopening the banner
-      Drupal.eu_cookie_compliance.toggleWithdrawBanner = () => {
+      Drupal.eu_cookie_compliance.toggleWithdrawBanner = function() {
         Drupal.eu_cookie_compliance.withdrawAction();
       };
     },
 
-    showOverlays: () => {
-      $('iframe[data-loom-cookie-category]').each((n, el) => {
+    showOverlays: function() {
+      $('iframe[data-loom-cookie-category]').each(function(n, el) {
         let $iframe = $(el);
         if ($iframe.closest('.loom-cookie-iframe-wrapper').length) {
           return;
@@ -221,7 +263,7 @@
     /**
      * Open banner without resetting the selected categories.
      */
-    reopenBanner: () => {
+    reopenBanner: function() {
       Drupal.eu_cookie_compliance.withdrawAction();
     },
   };
