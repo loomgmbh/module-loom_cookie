@@ -30,8 +30,10 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
         if (in_array($attachment[1], $attachment_names)) {
           $attachment[0]['#attributes']['data-loom-cookie-category'] = $category->id();
           $attachment[0]['#attributes']['data-loom-cookie-type'] = 'script-block';
-          $attachment[0]['#attributes']['data-loom-cookie-content'] = $attachment[0]['#value'];
-          $attachment[0]['#value'] = '';
+          $attachment[0]['#attributes']['data-loom-cookie-content'] = $attachment[0]['#value'] ?? NULL;
+          if (isset($attachment[0]['#value'])) {
+            $attachment[0]['#value'] = '';
+          }
         }
       }
     }
