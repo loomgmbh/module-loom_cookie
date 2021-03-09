@@ -1,6 +1,8 @@
 js:
   js:
     js/loom-cookie.js: {}
+  dependencies:
+    - core/jquery
 styles:
   css:
     theme:
