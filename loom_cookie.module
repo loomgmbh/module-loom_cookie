@@ -16,10 +16,16 @@ use Drupal\loom_cookie\CategoryInterface;
  * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
  */
 function loom_cookie_page_attachments_alter(array &$attachments) {
+  if (!isset($attachments['#attached']['drupalSettings'])) {
+    return;
+  }
+
   /** @var CategoryInterface[] $categories */
   $categories = Drupal::entityTypeManager()
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
+
+  $settings = [];
 
   foreach ($categories as $category) {
     if (!empty($category->attachmentNames)) {
@@ -45,13 +51,36 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
         : '';
 
       if ($big_regex) {
-        $attachments['#attached']['drupalSettings']['loom_cookie'][$category->id]['clientSideBlockedScripts'] = $big_regex;
+        $settings[$category->id]['clientSideBlockedScripts'] = $big_regex;
       }
     }
   }
 
   // insert script that re-enables scripts when the category gets allowed
   array_unshift($attachments['#attached']['library'], 'loom_cookie/js');
+  array_unshift($attachments['#attached']['html_head'], [
+    [
+      '#tag' => 'script',
+      '#attributes' => [
+        'src' => '/modules/contrib/loom_cookie/js/block-scripts.js',
+      ],
+    ],
+    'loom_cookie_block_scripts',
+  ]);
+  array_unshift($attachments['#attached']['html_head'], [
+    [
+      '#tag' => 'script',
+      '#value' => Markup::create('window.loomCookieSettings = ' . json_encode($settings)),
+    ],
+    'loom_cookie_settings',
+  ]);
+  array_unshift($attachments['#attached']['html_head'], [
+    [
+      '#tag' => 'script',
+      '#value' => Markup::create('window.loomCookieSettingsECC = ' . json_encode($attachments['#attached']['drupalSettings']['eu_cookie_compliance'])),
+    ],
+    'loom_cookie_settings_ecc',
+  ]);
   // add styles
   array_unshift($attachments['#attached']['library'], 'loom_cookie/styles');
 }
