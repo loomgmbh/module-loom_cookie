@@ -1,6 +1,7 @@
 name: 'LOOM Cookie'
 type: module
 description: 'Extension for eu_cookie_compliance module'
+core_version_requirement: 9.x
 core: 8.x
 package: 'LOOM'
 version: 2.5.8
