@@ -1,9 +1,9 @@
 name: 'LOOM Cookie'
 type: module
-description: 'Extension for eu_cookie_compliance module'
+description: 'Extension for loom_cookie_compliance module'
 core_version_requirement: ^8.8 || ^9
 package: 'LOOM'
-version: 2.5.8
+version: 3.0.0-alpha
 
 dependencies:
-  - eu_cookie_compliance
+  - loom_cookie_compliance

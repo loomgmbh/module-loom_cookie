@@ -77,7 +77,7 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
   array_unshift($attachments['#attached']['html_head'], [
     [
       '#tag' => 'script',
-      '#value' => Markup::create('window.loomCookieSettingsECC = ' . json_encode($attachments['#attached']['drupalSettings']['eu_cookie_compliance'] ?? [])),
+      '#value' => Markup::create('window.loomCookieSettingsECC = ' . json_encode($attachments['#attached']['drupalSettings']['loom_cookie_compliance'] ?? [])),
     ],
     'loom_cookie_settings_ecc',
   ]);
@@ -106,7 +106,7 @@ function loom_cookie_preprocess_html(&$vars) {
 
 
   // hide cookie banner on specific pages
-  $ecc_config = Drupal::config('eu_cookie_compliance.settings');
+  $ecc_config = Drupal::config('loom_cookie_compliance.settings');
   $path = Drupal::service('path.current')->getPath();
   $url_alias_path = Drupal::service('path_alias.manager')
     ->getAliasByPath($path);
@@ -124,7 +124,7 @@ function loom_cookie_preprocess_html(&$vars) {
  *
  * @param $form
  */
-function loom_cookie_form_eu_cookie_compliance_config_form_alter(&$form) {
+function loom_cookie_form_loom_cookie_compliance_config_form_alter(&$form) {
   // disable the module's own script filter feature in favor of our custom one
   $form['javascripts']['disabled_javascripts'] = [
     '#type' => 'details',
@@ -214,18 +214,18 @@ function loom_cookie_cron() {
     ->get('consent_storage.lifetime');
   $max_possible_timestamp = time() - $consent_entry_lifetime * 24 * 60 * 60;
 
-  Drupal::database()->delete('eu_cookie_compliance_basic_consent')
+  Drupal::database()->delete('loom_cookie_compliance_basic_consent')
     ->condition('timestamp', $max_possible_timestamp, '<')
     ->execute();
 }
 
 /**
- * Implements hook_eu_cookie_compliance_path_match_alter().
+ * Implements hook_loom_cookie_compliance_path_match_alter().
  *
  * @param $excluded
  */
-function loom_cookie_eu_cookie_compliance_path_match_alter(&$excluded) {
-  // Never disable eu_cookie_compliance based on the path.
+function loom_cookie_loom_cookie_compliance_path_match_alter(&$excluded) {
+  // Never disable loom_cookie_compliance based on the path.
   // We just hide the banner popup by custom code.
   $excluded = FALSE;
 }

@@ -1,7 +1,7 @@
 (function($) {
   let script = {
     attach: function(context, settings) {
-      if (!Drupal.eu_cookie_compliance) {
+      if (!Drupal.loom_cookie_compliance) {
         return;
       }
 
@@ -10,7 +10,7 @@
         Drupal.attachBehaviors($(document).find('#sliding-popup')[0]);
       });
 
-      script.enabledCategories = Drupal.eu_cookie_compliance.getAcceptedCategories();
+      script.enabledCategories = Drupal.loom_cookie_compliance.getAcceptedCategories();
 
       if (context == document) {
         script.modifyEUCookieComplianceFunctions();
@@ -70,24 +70,24 @@
     modifyEUCookieComplianceFunctions: function() {
       // click on "Withdraw consent" -> show the banner again (no reset of the
       // settings)
-      Drupal.eu_cookie_compliance.withdrawAction = function() {
-        Drupal.eu_cookie_compliance.setStatus(0);
-        Drupal.eu_cookie_compliance.setAcceptedCategories([]);
-        let cookieName = (typeof drupalSettings.eu_cookie_compliance.cookie_name ===
-          'undefined' || drupalSettings.eu_cookie_compliance.cookie_name ===
+      Drupal.loom_cookie_compliance.withdrawAction = function() {
+        Drupal.loom_cookie_compliance.setStatus(0);
+        Drupal.loom_cookie_compliance.setAcceptedCategories([]);
+        let cookieName = (typeof drupalSettings.loom_cookie_compliance.cookie_name ===
+          'undefined' || drupalSettings.loom_cookie_compliance.cookie_name ===
           '')
           ? 'cookie-agreed'
-          : drupalSettings.eu_cookie_compliance.cookie_name;
+          : drupalSettings.loom_cookie_compliance.cookie_name;
         if (typeof $.removeCookie !== 'undefined' ||
           $.removeCookie(cookieName,
-            {domain: drupalSettings.eu_cookie_compliance.domain}) == false) {
+            {domain: drupalSettings.loom_cookie_compliance.domain}) == false) {
           $.cookie(cookieName, null, {
             path: '/',
-            domain: drupalSettings.eu_cookie_compliance.domain,
+            domain: drupalSettings.loom_cookie_compliance.domain,
           });
         }
 
-        Drupal.eu_cookie_compliance.execute();
+        Drupal.loom_cookie_compliance.execute();
 
         script.enabledCategories.forEach(function(categoryId) {
           $('#sliding-popup input[id="cookie-category-' + categoryId + '"]')
@@ -96,17 +96,17 @@
         $.cookie('cookie-agreed-categories',
           JSON.stringify(script.enabledCategories), {
             path: '/',
-            domain: drupalSettings.eu_cookie_compliance.domain,
+            domain: drupalSettings.loom_cookie_compliance.domain,
           });
         $.cookie('cookie-agreed', 2, {
           path: '/',
-          domain: drupalSettings.eu_cookie_compliance.domain,
+          domain: drupalSettings.loom_cookie_compliance.domain,
         });
       };
 
       // One-Click for reopening the banner
-      Drupal.eu_cookie_compliance.toggleWithdrawBanner = function() {
-        Drupal.eu_cookie_compliance.withdrawAction();
+      Drupal.loom_cookie_compliance.toggleWithdrawBanner = function() {
+        Drupal.loom_cookie_compliance.withdrawAction();
       };
     },
 
@@ -128,7 +128,7 @@
      * Open banner without resetting the selected categories.
      */
     reopenBanner: function() {
-      Drupal.eu_cookie_compliance.withdrawAction();
+      Drupal.loom_cookie_compliance.withdrawAction();
     },
   };
 

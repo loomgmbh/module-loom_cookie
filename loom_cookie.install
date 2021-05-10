@@ -9,11 +9,11 @@ function loom_cookie_install() {
 }
 
 /**
- * Activate EU Cookie Compliance setting for excluding admin pages
+ * Activate LOOM Cookie Compliance setting for excluding admin pages
  */
 function loom_cookie_update_8001() {
   $ecc_config = Drupal::configFactory()
-    ->getEditable('eu_cookie_compliance.settings');
+    ->getEditable('loom_cookie_compliance.settings');
   $ecc_config->set('exclude_admin_theme', TRUE);
   $ecc_config->save();
 }
@@ -29,7 +29,7 @@ function loom_cookie_update_8002() {
   $config->save();
 
   $ecc_config = Drupal::configFactory()
-    ->getEditable('eu_cookie_compliance.settings');
+    ->getEditable('loom_cookie_compliance.settings');
   $ecc_config->set('consent_storage_method', 'loom_cookie');
   $ecc_config->save();
 }

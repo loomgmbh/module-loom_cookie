@@ -152,7 +152,7 @@ class Category extends ConfigEntityBase implements CategoryInterface {
   }
 
   private static function updateEUCookieComplianceSettings() {
-    // update EU Cookie Compliance settings
+    // update LOOM Cookie Compliance settings
     $category_ids = Drupal::entityQuery('loom_cookie_category')
       ->sort('weight')
       ->execute();
@@ -176,7 +176,7 @@ class Category extends ConfigEntityBase implements CategoryInterface {
     }
 
     Drupal::configFactory()
-      ->getEditable('eu_cookie_compliance.settings')
+      ->getEditable('loom_cookie_compliance.settings')
       ->set('whitelisted_cookies', implode("\r\n", $whitelisted_cookies))
       ->set('cookie_categories', implode("\r\n", $cookie_categories))
       ->save();

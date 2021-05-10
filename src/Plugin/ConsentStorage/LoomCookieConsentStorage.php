@@ -3,7 +3,7 @@
 namespace Drupal\loom_cookie\Plugin\ConsentStorage;
 
 use Drupal;
-use Drupal\eu_cookie_compliance\Plugin\ConsentStorageBase;
+use Drupal\loom_cookie_compliance\Plugin\ConsentStorageBase;
 
 /**
  * Provides a database storage for cookie consents.
@@ -33,7 +33,7 @@ class LoomCookieConsentStorage extends ConsentStorageBase {
       'categories' => json_decode($categories),
     ];
 
-    Drupal::database()->insert('eu_cookie_compliance_basic_consent')->fields(
+    Drupal::database()->insert('loom_cookie_compliance_basic_consent')->fields(
       [
         'uid' => $uid,
         'ip_address' => $ip_address,

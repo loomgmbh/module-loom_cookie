@@ -7,7 +7,7 @@ Dieses Modul beinhaltet:
 
 # Dependencies
 
-- eu_cookie_compliance - https://www.drupal.org/project/eu_cookie_compliance
+- loom_cookie_compliance - https://www.drupal.org/project/loom_cookie_compliance
 
 # Install
 
