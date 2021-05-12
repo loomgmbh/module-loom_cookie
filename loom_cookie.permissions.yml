@@ -1,0 +1,4 @@
+administer loom cookie popup:
+  title: 'Administer LOOM Cookie banner'
+display loom cookie popup:
+  title: 'Display LOOM Cookie banner'

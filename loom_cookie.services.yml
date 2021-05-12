@@ -1,4 +1,7 @@
 services:
+  plugin.manager.loom_cookie.consent_storage:
+    class: Drupal\loom_cookie\Plugin\ConsentStorageManager
+    parent: default_plugin_manager
   loom.cookie.filter_scripts.subscriber:
     class: Drupal\loom_cookie\EventSubscriber\FilterScriptsSubscriber
     tags:

@@ -1,0 +1,5 @@
+loom_cookie.settings:
+  title: 'LOOM Cookie Settings'
+  base_route_name: loom_cookie.settings
+  names:
+    - loom_cookie.settings

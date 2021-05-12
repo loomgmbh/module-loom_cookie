@@ -1,0 +1,9 @@
+loom_cookie.settings_tab:
+  route_name: loom_cookie.settings
+  title: Settings
+  base_route: loom_cookie.settings
+
+loom_cookie.categories:
+  route_name: loom.cookie.entity.category.collection
+  title: Categories
+  base_route: loom_cookie.settings

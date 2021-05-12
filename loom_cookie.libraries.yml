@@ -1,9 +1,40 @@
-js:
+main:
+  version: 1.0
   js:
-    js/loom-cookie.js: {}
+    js/loom_cookie.main.js: {}
+  css:
+    state:
+      css/loom_cookie.main.css: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/jquery.once
+    - core/jquery.cookie
+bare:
+  version: 1.0
+  js:
+    js/loom_cookie.main.js: {}
+  css:
+    state:
+      css/loom_cookie.bare.css: {}
+  dependencies:
+    - core/jquery
+    - core/drupal
+    - core/drupalSettings
+    - core/jquery.once
+    - core/jquery.cookie
+admin:
+  version: 1.0
+  css:
+    state:
+      css/loom_cookie.admin.css: {}
+extended:
+  js:
+    js/loom_cookie.extended.js: {}
   dependencies:
     - core/jquery
 styles:
   css:
     theme:
-      css/loom-cookie.css: {}
+      css/loom_cookie.styles.css: {}

@@ -47,8 +47,8 @@ use Drupal\loom_cookie\CategoryInterface;
  *     "detailedDescription",
  *   },
  *   links = {
- *     "edit-form" = "/admin/config/system/eu-cookie-compliance/loom-cookie/categories/{loom_cookie_category}",
- *     "delete-form" = "/admin/config/system/eu-cookie-compliance/loom-cookie/categories/{loom_cookie_category}/delete",
+ *     "edit-form" = "/admin/config/system/loom-cookie/categories/{loom_cookie_category}",
+ *     "delete-form" = "/admin/config/system/loom-cookie/categories/{loom_cookie_category}/delete",
  *   }
  * )
  */
@@ -140,18 +140,18 @@ class Category extends ConfigEntityBase implements CategoryInterface {
   }
 
   public function postSave(EntityStorageInterface $storage, $update = TRUE) {
-    self::updateEUCookieComplianceSettings();
+    self::updateLOOMCookieSettings();
 
     return parent::postSave($storage, $update);
   }
 
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
-    self::updateEUCookieComplianceSettings();
+    self::updateLOOMCookieSettings();
 
     parent::postDelete($storage, $entities);
   }
 
-  private static function updateEUCookieComplianceSettings() {
+  private static function updateLOOMCookieSettings() {
     // update LOOM Cookie Compliance settings
     $category_ids = Drupal::entityQuery('loom_cookie_category')
       ->sort('weight')
@@ -176,7 +176,7 @@ class Category extends ConfigEntityBase implements CategoryInterface {
     }
 
     Drupal::configFactory()
-      ->getEditable('loom_cookie_compliance.settings')
+      ->getEditable('loom_cookie.settings')
       ->set('whitelisted_cookies', implode("\r\n", $whitelisted_cookies))
       ->set('cookie_categories', implode("\r\n", $cookie_categories))
       ->save();

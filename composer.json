@@ -1,7 +1,7 @@
 {
     "name": "loomgmbh/loom_cookie",
     "type": "drupal-module",
-    "description": "Extension for loom_cookie_compliance module",
+    "description": "This module aims at making the website compliant with the new EU cookie regulation",
     "keywords": [
         "Drupal"
     ],

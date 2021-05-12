@@ -1,13 +1,13 @@
-loom.cookie.settings:
+loom_cookie.settings:
   title: 'LOOM Cookie Settings'
-  parent: loom_cookie_compliance.settings
+  parent: system.admin_config_system
   description: 'Configure LOOM Cookie module'
-  route_name: loom.cookie.settings
-  weight: 0
+  route_name: loom_cookie.settings
+  weight: -20
 
 loom.cookie.entity.category.collection:
   title: 'Categories'
-  parent: loom_cookie_compliance.settings
+  parent: loom_cookie.settings
   description: 'Configure LOOM Cookie Categories'
   route_name: loom.cookie.entity.category.collection
   weight: 1

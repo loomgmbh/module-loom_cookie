@@ -1,35 +1,186 @@
 <?php
 
+use Drupal\Core\Database\Database;
+use Drupal\user\Entity\Role;
+
+/**
+ * Implements hook_schema().
+ */
+function loom_cookie_schema() {
+  $schema['loom_cookie_basic_consent'] = [
+    'description' => 'Basic consent storage for LOOM Cookie / GDPR.',
+    'fields' => [
+      'cid' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique consent storage ID.',
+      ],
+      'uid' => [
+        'description' => '{users}.uid for user.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'timestamp' => [
+        'description' => 'Time of consent.',
+        'type' => 'int',
+        'unsigned' => FALSE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'ip_address' => [
+        'description' => 'The IP address.',
+        'type' => 'varchar',
+        // Maximum length of an ipv6 IP address.
+        'length' => 45,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'consent_type' => [
+        'description' => 'The type of consent, such as "banner" for the banner and form_id for forms.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'revision_id' => [
+        'description' => 'Revision of the privacy policy at the time of consent.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['cid'],
+    'indexes' => [
+      'uid' => ['uid'],
+    ],
+    'foreign keys' => [
+      'uid' => ['users' => 'uid'],
+    ],
+  ];
+
+  return $schema;
+}
+
 /**
  * Implements hook_install().
  */
 function loom_cookie_install() {
-  loom_cookie_update_8001();
-  loom_cookie_update_8002();
-}
+  module_load_include('module', 'loom_cookie', 'loom_cookie');
 
-/**
- * Activate LOOM Cookie Compliance setting for excluding admin pages
- */
-function loom_cookie_update_8001() {
-  $ecc_config = Drupal::configFactory()
-    ->getEditable('loom_cookie_compliance.settings');
-  $ecc_config->set('exclude_admin_theme', TRUE);
-  $ecc_config->save();
-}
-
-/**
- * Activate consent storage.
- */
-function loom_cookie_update_8002() {
-  $config = Drupal::configFactory()->getEditable('loom_cookie.settings');
-  if ($config->get('consent_storage.lifetime') == NULL) {
-    $config->set('consent_storage.lifetime', 100);
+  $roles = Role::loadMultiple();
+  $permission = 'display loom cookie popup';
+  foreach ($roles as $rid => $role) {
+    user_role_grant_permissions($rid, [$permission]);
   }
-  $config->save();
 
-  $ecc_config = Drupal::configFactory()
-    ->getEditable('loom_cookie_compliance.settings');
-  $ecc_config->set('consent_storage_method', 'loom_cookie');
-  $ecc_config->save();
+  _loom_cookie_module_set_weight();
+}
+
+/**
+ * Migrate eu_cookie_compliance.
+ */
+function loom_cookie_update_8301() {
+  if (!Database::getConnection()->schema()->tableExists('loom_cookie_basic_consent')) {
+    $schema = loom_cookie_schema();
+    Database::getConnection()->schema()->createTable('loom_cookie_basic_consent', $schema['loom_cookie_basic_consent']);
+  }
+
+  // migrate eu_cookie_compliance_basic_consent records to loom_cookie_basic_consent
+  if (Database::getConnection()->schema()->tableExists('eu_cookie_compliance_basic_consent')) {
+    $query = \Drupal::database()->select('eu_cookie_compliance_basic_consent');
+    $query->fields('eu_cookie_compliance_basic_consent', [
+      'cid',
+      'uid',
+      'ip_address',
+      'timestamp',
+      'revision_id',
+      'consent_type',
+    ]);
+    foreach ($query->execute()->fetchAll() ?: [] as $record) {
+      \Drupal::database()->insert('loom_cookie_basic_consent')->fields(
+        [
+          'cid' => $record->cid,
+          'uid' => $record->uid,
+          'ip_address' => $record->ip_address,
+          'timestamp' => $record->timestamp,
+          'revision_id' => $record->revision_id ? $record->revision_id : 0 ,
+          'consent_type' => $record->consent_type,
+        ]
+      )->execute();
+    }
+  }
+
+  // migrate settings
+  $loom_settings = \Drupal::configFactory()->getEditable('loom_cookie.settings');
+  $lifetime = $loom_settings->get('consent_storage.lifetime') ?: '100';
+  $eu_settings = \Drupal::configFactory()->getEditable('eu_cookie_compliance.settings');
+  $deprecated = [
+    'popup_info_template',
+    'disabled_javascripts',
+    'popup_agreed_enabled',
+    'popup_hide_agreed',
+    'popup_agreed',
+    'popup_find_more_button_message',
+    'popup_hide_button_message',
+  ];
+
+  $data = array_filter($eu_settings->getRawData(), function($key) use ($deprecated) {
+    return !in_array($key, $deprecated);
+  }, ARRAY_FILTER_USE_KEY);
+  $data['consent_storage_lifetime'] = $lifetime;
+  $data['consent_storage_method'] = 'basic';
+  $loom_settings->setData($data);
+  $loom_settings->save(TRUE);
+
+  $languages = Drupal::languageManager()->getLanguages();
+  foreach ($languages as $language) {
+    $eu_config_translation = Drupal::languageManager()
+      ->getLanguageConfigOverride($language->getId(), 'eu_cookie_compliance.settings');
+    if (!$eu_config_translation->isNew()) {
+      $loom_config_translation = Drupal::languageManager()
+        ->getLanguageConfigOverride($language->getId(), 'loom_cookie.settings');
+
+      foreach ($eu_config_translation->get() as $key => $value) {
+        if (!in_array($key, $deprecated)) {
+          $loom_config_translation->set($key, $value);
+        }
+      }
+
+      $loom_config_translation->save();
+    }
+  }
+
+  // config might have dependencies on eu_cookie_compliance, add loom_cookie!
+  $dependents = Drupal::service('config.manager')->findConfigEntityDependents('module', ['eu_cookie_compliance']);
+  foreach ($dependents as $name => $dependency) {
+    if ($name !== 'eu_cookie_compliance.settings') {
+      $config = Drupal::configFactory()->getEditable($name);
+      $dependencies = $config->get('dependencies');
+      $dependencies['module'][] = 'loom_cookie';
+      $config->set('dependencies', $dependencies)->save(TRUE);
+    }
+  }
+
+  // migrate permissions
+  $permissions = [
+    'administer eu cookie compliance popup' => 'administer loom cookie popup',
+    'display eu cookie compliance popup' => 'display loom cookie popup',
+  ];
+  $roles = Role::loadMultiple();
+  foreach ($roles as $rid => $role) {
+    foreach ($permissions as $old_permission => $new_permission) {
+      if ($role->hasPermission($old_permission)) {
+        user_role_grant_permissions($rid, [$new_permission]);
+      }
+    }
+  }
+
+  // @todo: migrate view
+
+  // @todo: message not working, why?
+  #Drupal::messenger()->addStatus('Please uninstall eu_cookie_compliance now!');
+  #Drupal::logger('loom_cookie')->info('Please uninstall eu_cookie_compliance now!');
 }
