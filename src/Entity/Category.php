@@ -38,10 +38,14 @@ use Drupal\loom_cookie\CategoryInterface;
  *     "weight",
  *     "cookies",
  *     "attachmentNames",
+ *     "attachmentNamesVendors",
  *     "scriptUrlRegexes",
+ *     "scriptUrlRegexesVendors",
  *     "scriptBlockRegexes",
  *     "scriptUrlRegexesClientSide",
+ *     "scriptUrlRegexesClientSideVendors",
  *     "embedUrlRegexes",
+ *     "embedUrlRegexesVendors",
  *     "embedMessage",
  *     "description",
  *     "detailedDescription",
@@ -95,11 +99,25 @@ class Category extends ConfigEntityBase implements CategoryInterface {
   public $attachmentNames = [];
 
   /**
+   * Names of attachments to be filtered.
+   *
+   * @var array
+   */
+  public $attachmentNamesVendors = [];
+
+  /**
    * Regexes for script urls to be filtered.
    *
    * @var array
    */
   public $scriptUrlRegexes = [];
+
+  /**
+   * Regexes for script urls to be filtered.
+   *
+   * @var array
+   */
+  public $scriptUrlRegexesVendors = [];
 
   /**
    * Regexes for script blocks to be filtered.
@@ -116,11 +134,25 @@ class Category extends ConfigEntityBase implements CategoryInterface {
   public $scriptUrlRegexesClientSide = [];
 
   /**
+   * Vendors with regexes for script urls to be filtered by JS.
+   *
+   * @var array
+   */
+  public $scriptUrlRegexesClientSideVendors = [];
+
+  /**
    * Regexes for embed urls to be filtered.
    *
    * @var array
    */
   public $embedUrlRegexes = [];
+
+  /**
+   * Regexes for embed urls to be filtered.
+   *
+   * @var array
+   */
+  public $embedUrlRegexesVendors = [];
 
   public $embedMessage = '';
 

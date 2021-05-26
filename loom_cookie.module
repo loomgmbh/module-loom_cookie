@@ -12,6 +12,8 @@
 
 use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Entity\EntityDeleteForm;
+use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
@@ -448,11 +450,23 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
   array_unshift($attachments['#attached']['library'], 'loom_cookie/styles');
 }
 
-function loom_cookie_multiline_split($value): array {
-  if (empty($value)) {
-    return [];
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * @param array $theme_registry
+ */
+function loom_cookie_theme_registry_alter(&$theme_registry) {
+  // legacy: themes and modules might have included custom preprocess functions which rely on the old module weight
+  foreach ($theme_registry as &$item) {
+    if (empty($item['preprocess functions'])) continue;
+
+    $functions = &$item['preprocess functions'];
+
+    if (FALSE === $key = array_search('loom_cookie_preprocess_eu_cookie_compliance_popup_info', $functions)) continue;
+
+    unset($functions[$key]);
+    array_unshift($functions, 'loom_cookie_preprocess_eu_cookie_compliance_popup_info');
   }
-  return str_replace("\r", '', array_filter(array_unique(explode("\n", $value))));
 }
 
 /**
@@ -515,6 +529,20 @@ function loom_cookie_preprocess_eu_cookie_compliance_popup_info(&$vars) {
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function loom_cookie_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  // Lock vendors view for everyone to ensure later updates won't override anything custom
+  $form_object = $form_state->getFormObject();
+  if ($form_object instanceof EntityForm || $form_object instanceof EntityDeleteForm) {
+    if ($form_object->getEntity()->getEntityTypeId() === 'view' && $form_object->getEntity()->id() === 'loom_cookie_vendors') {
+      $form_object->messenger()->addWarning('This view is locked by loom_cookie.');
+      $form['actions']['submit']['#disabled'] = TRUE;
+    }
+  }
+}
+
+/**
  * Implements hook_cron().
  */
 function loom_cookie_cron() {
@@ -526,6 +554,23 @@ function loom_cookie_cron() {
   Drupal::database()->delete('loom_cookie_basic_consent')
     ->condition('timestamp', $max_possible_timestamp, '<')
     ->execute();
+
+  // update vendors
+  /** @var \Drupal\loom_cookie\Services\VendorService $vendor_service */
+  $vendor_service = Drupal::service('loom_cookie.vendor');
+  $vendor_service->import();
+}
+
+/**
+ * @param $value
+ *
+ * @return array
+ */
+function _loom_cookie_multiline_split($value): array {
+  if (empty($value)) {
+    return [];
+  }
+  return str_replace("\r", '', array_filter(array_unique(explode("\n", $value))));
 }
 
 /**

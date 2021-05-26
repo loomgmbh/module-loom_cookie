@@ -1,6 +1,9 @@
 <?php
 
+use Drupal\Core\Config\InstallStorage;
+use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Database\Database;
+use Drupal\Core\Config\FileStorage;
 use Drupal\user\Entity\Role;
 
 /**
@@ -113,10 +116,10 @@ function loom_cookie_update_8301() {
     }
   }
 
-  // migrate settings
-  $loom_settings = \Drupal::configFactory()->getEditable('loom_cookie.settings');
+  // migrate eu_cookie_compliance settings
+  $loom_settings = Drupal::configFactory()->getEditable('loom_cookie.settings');
   $lifetime = $loom_settings->get('consent_storage.lifetime') ?: '100';
-  $eu_settings = \Drupal::configFactory()->getEditable('eu_cookie_compliance.settings');
+  $eu_settings = Drupal::configFactory()->getEditable('eu_cookie_compliance.settings');
   $deprecated = [
     'popup_info_template',
     'disabled_javascripts',
@@ -164,7 +167,7 @@ function loom_cookie_update_8301() {
     }
   }
 
-  // migrate permissions
+  // migrate eu_cookie_compliance_basic_consent permissions
   $permissions = [
     'administer eu cookie compliance popup' => 'administer loom cookie popup',
     'display eu cookie compliance popup' => 'display loom cookie popup',
@@ -180,7 +183,77 @@ function loom_cookie_update_8301() {
 
   // @todo: migrate view
 
-  // @todo: message not working, why?
-  #Drupal::messenger()->addStatus('Please uninstall eu_cookie_compliance now!');
-  #Drupal::logger('loom_cookie')->info('Please uninstall eu_cookie_compliance now!');
+  return 'Please uninstall eu_cookie_compliance now!';
+}
+
+/**
+ * Update 8302 - Create loom_cookie_vendor entity.
+ */
+function loom_cookie_update_8302() {
+  //check if the table exists first. If not, then create the entity.
+  if(!Database::getConnection()->schema()->tableExists('loom_cookie_vendor')) {
+    Drupal::entityTypeManager()->clearCachedDefinitions();
+    Drupal::entityDefinitionUpdateManager()
+      ->installEntityType(Drupal::entityTypeManager()->getDefinition('loom_cookie_vendor'));
+  }
+  else {
+    // @todo: for testing, remove that later
+    #$entity_update_manager = \Drupal::entityDefinitionUpdateManager();
+    #$entity_type = $entity_update_manager->getEntityType('loom_cookie_vendor');
+    #$entity_update_manager->uninstallEntityType($entity_type);
+    #return 'Entity "loom_cookie_vendor" already exists';
+  }
+
+  _loom_cookie_update_helper_install_configs(InstallStorage::CONFIG_OPTIONAL_DIRECTORY, ['views.view.loom_cookie_vendors']);
+}
+
+/**
+ * Helper function to install all new configs.
+ *
+ * @param string $directory
+ * @param array $config_names
+ * @param bool $delete_if_exists
+ */
+function _loom_cookie_update_helper_install_configs(string $directory, array $config_names = [], bool $delete_if_exists = FALSE) {
+  $optional_install_path = \Drupal::moduleHandler()
+      ->getModule('loom_cookie')
+      ->getPath() . '/' . $directory;
+  if (!is_dir($optional_install_path)) {
+    return;
+  }
+
+  // Hacky solution, since we can only choose a directory with configs
+  $storage = new class($optional_install_path, StorageInterface::DEFAULT_COLLECTION, $config_names) extends FileStorage {
+    protected $configNames = [];
+
+    public function __construct($directory, $collection = StorageInterface::DEFAULT_COLLECTION, array $config_names = []) {
+      parent::__construct($directory, $collection);
+      $this->configNames = $config_names;
+    }
+
+    public function listAll($prefix = '') {
+      $names = [];
+
+      foreach (parent::listAll($prefix) as $name) {
+        if (!$this->configNames || in_array($name, $this->configNames)) {
+          $names[] = $name;
+        }
+      }
+
+      return $names;
+    }
+  };
+
+  if ($delete_if_exists) {
+    foreach ($storage->listAll() as $name) {
+      Drupal::configFactory()->getEditable($name)->delete();
+    }
+    Drupal::configFactory()->reset();
+  }
+
+  /** @var \Drupal\Core\Config\ConfigInstallerInterface $config_installer */
+  $config_installer = Drupal::service('config.installer');
+  $config_installer->installOptionalConfig($storage);
+
+  Drupal::configFactory()->reset();
 }

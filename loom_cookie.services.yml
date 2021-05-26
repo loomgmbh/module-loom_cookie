@@ -6,3 +6,9 @@ services:
     class: Drupal\loom_cookie\EventSubscriber\FilterScriptsSubscriber
     tags:
       - { name: event_subscriber }
+  logger.channel.loom_cookie:
+    parent: logger.channel_base
+    arguments: ['loom_cookie']
+  loom_cookie.vendor:
+    class: Drupal\loom_cookie\Services\VendorService
+    arguments: ['@entity_type.manager', '@logger.channel.loom_cookie']

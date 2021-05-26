@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnused */
+<?php
+
+/** @noinspection PhpDocMissingThrowsInspection */
 
 namespace Drupal\loom_cookie\Form;
 
@@ -63,14 +65,14 @@ class CategoryForm extends EntityForm {
       '#type' => 'text_format',
       '#title' => $this->t('Description'),
       '#default_value' => $category->description['value'],
-      '#format' => $category->description['format'],
+      '#format' => $category->description['format'] ?? filter_default_format(),
     ];
 
     $form['detailedDescription'] = [
       '#type' => 'text_format',
       '#title' => 'Detailierte Beschreibung',
       '#default_value' => $category->detailedDescription['value'],
-      '#format' => $category->detailedDescription['format'],
+      '#format' => $category->detailedDescription['format'] ?? filter_default_format(),
       '#description' => 'Kann genutzt werden, um die zu dieser Kategorie gehörenden Cookies und Skripte näher zu beschreiben.',
     ];
 
@@ -166,6 +168,7 @@ class CategoryForm extends EntityForm {
       '#title' => 'Attachments',
       '#default_value' => implode("\n", $category->attachmentNames),
       '#description_display' => 'before',
+      '#disabled' => TRUE,
       '#description' =>
         [
           [
@@ -188,11 +191,31 @@ class CategoryForm extends EntityForm {
         ],
     ];
 
+    // vendors
+    $form['scripts_section']['server_side']['attachmentNamesVendors'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('Vendors'),
+      '#default_value' =>  !empty($category->attachmentNamesVendors) ?
+        $this->entityTypeManager->getStorage('loom_cookie_vendor')
+          ->loadByProperties(['uuid' => $category->attachmentNamesVendors])
+        : NULL,
+      '#target_type' => 'loom_cookie_vendor',
+      '#tags' => TRUE,
+      '#selection_handler' => 'default:vendor',
+      '#selection_settings' => [
+        'fields' => ['attachment_names'],
+      ],
+      '#size' => 1024,
+      '#maxlength' => 1024,
+      '#after_build' => [[$this, 'afterBuildEntityAutocompleteVendor']],
+    ];
+
     $form['scripts_section']['server_side']['scriptUrlRegexes'] = [
       '#type' => 'textarea',
       '#title' => 'Script-URLs',
       '#default_value' => implode("\n", $category->scriptUrlRegexes),
       '#description_display' => 'before',
+      '#disabled' => TRUE,
       '#description' =>
         [
           [
@@ -209,6 +232,25 @@ class CategoryForm extends EntityForm {
             ],
           ],
         ],
+    ];
+
+    // vendors
+    $form['scripts_section']['server_side']['scriptUrlRegexesVendors'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('Vendors'),
+      '#default_value' =>  !empty($category->scriptUrlRegexesVendors) ?
+        $this->entityTypeManager->getStorage('loom_cookie_vendor')
+          ->loadByProperties(['uuid' => $category->scriptUrlRegexesVendors])
+        : NULL,
+      '#target_type' => 'loom_cookie_vendor',
+      '#tags' => TRUE,
+      '#selection_handler' => 'default:vendor',
+      '#selection_settings' => [
+        'fields' => ['script_url_regexes'],
+      ],
+      '#size' => 1024,
+      '#maxlength' => 1024,
+      '#after_build' => [[$this, 'afterBuildEntityAutocompleteVendor']],
     ];
 
     $form['scripts_section']['server_side']['scriptBlockRegexes'] = [
@@ -247,6 +289,7 @@ class CategoryForm extends EntityForm {
       '#title' => 'Script-URLs',
       '#default_value' => implode("\n", $category->scriptUrlRegexesClientSide),
       '#description_display' => 'before',
+      '#disabled' => TRUE,
       '#description' =>
         [
           [
@@ -267,6 +310,25 @@ class CategoryForm extends EntityForm {
         ],
     ];
 
+    // vendors
+    $form['scripts_section']['client_side']['scriptUrlRegexesClientSideVendors'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('Vendors'),
+      '#default_value' =>  !empty($category->scriptUrlRegexesClientSideVendors) ?
+        $this->entityTypeManager->getStorage('loom_cookie_vendor')
+          ->loadByProperties(['uuid' => $category->scriptUrlRegexesClientSideVendors])
+        : NULL,
+      '#target_type' => 'loom_cookie_vendor',
+      '#tags' => TRUE,
+      '#selection_handler' => 'default:vendor',
+      '#selection_settings' => [
+        'fields' => ['script_url_regexes'],
+      ],
+      '#size' => 1024,
+      '#maxlength' => 1024,
+      '#after_build' => [[$this, 'afterBuildEntityAutocompleteVendor']],
+    ];
+
     $form['embeds'] = [
       '#type' => 'fieldset',
       '#title' => t('Embeds + iFrames'),
@@ -282,6 +344,7 @@ class CategoryForm extends EntityForm {
       '#title' => 'Embed-URLs (Embeds + iFrames)',
       '#default_value' => implode("\n", $category->embedUrlRegexes),
       '#description_display' => 'before',
+      '#disabled' => TRUE,
       '#description' =>
         [
           [
@@ -304,6 +367,25 @@ class CategoryForm extends EntityForm {
         ],
     ];
 
+    // vendors
+    $form['embeds']['embedUrlRegexesVendors'] = [
+      '#type' => 'entity_autocomplete',
+      '#title' => $this->t('Vendors'),
+      '#default_value' =>  !empty($category->embedUrlRegexesVendors) ?
+        $this->entityTypeManager->getStorage('loom_cookie_vendor')
+          ->loadByProperties(['uuid' => $category->embedUrlRegexesVendors])
+        : NULL,
+      '#target_type' => 'loom_cookie_vendor',
+      '#tags' => TRUE,
+      '#selection_handler' => 'default:vendor',
+      '#selection_settings' => [
+        'fields' => ['embed_url_regexes'],
+      ],
+      '#size' => 1024,
+      '#maxlength' => 1024,
+      '#after_build' => [[$this, 'afterBuildEntityAutocompleteVendor']],
+    ];
+
     $form['embeds']['embedMessage'] = [
       '#type' => 'textarea',
       '#title' => 'Nachricht, die anstelle eines geblockten Embeds/iFrames angezeigt werden soll',
@@ -316,11 +398,41 @@ class CategoryForm extends EntityForm {
   }
 
   /**
+   * @param array $element
+   *
+   * @return array
+   */
+  public function afterBuildEntityAutocompleteVendor(array $element): array {
+    $category = $this->entity;
+    $name = $element['#name'];
+
+    // category might be exported with vendors that do not exist, since it is a content entity
+    $vendor_storage = $this->entityTypeManager->getStorage('loom_cookie_vendor');
+    $has_values = !empty($category->$name);
+    $default_value = $has_values ? $vendor_storage->loadByProperties(['uuid' => $category->$name]) : NULL;
+    $disabled = $has_values && (count($default_value ?: []) !== count($category->$name ?: []));
+    if ($disabled) {
+      $element['#attributes']['disabled'] = TRUE;
+      $element['#disabled'] = TRUE;
+      $this->messenger()->addWarning(
+        "Das Feld $name wurde gesperrt, da Werte vorhanden sind, zu denen es keine Entitäten gibt. " .
+        "Vermutlich behebt ein Cron-Lauf das Problem."
+      );
+    }
+
+    return $element;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function save(array $form, FormStateInterface $form_state) {
     /** @var CategoryInterface $category */
     $category = $this->entity;
+
+    $category_storage = $this->entityTypeManager->getStorage('loom_cookie_category');
+    $vendor_storage = $this->entityTypeManager->getStorage('loom_cookie_vendor');
+    $original = !$category->isNew() ? $category_storage->load($category->id()) : NULL;
 
     // convert multiline strings to arrays
     $multiline_fields = [
@@ -333,7 +445,30 @@ class CategoryForm extends EntityForm {
     ];
 
     foreach ($multiline_fields as $field) {
-      $category->$field = loom_cookie_multiline_split($form_state->getValue($field));
+      $category->$field = _loom_cookie_multiline_split($form_state->getValue($field));
+    }
+
+    // vendors
+    $form = $form_state->getCompleteForm();
+    $vendor_fields = [
+      'attachmentNamesVendors' => $form['scripts_section']['server_side']['attachmentNamesVendors'] ?? [],
+      'scriptUrlRegexesVendors' => $form['scripts_section']['server_side']['scriptUrlRegexesVendors'] ?? [],
+      'scriptUrlRegexesClientSideVendors' => $form['scripts_section']['client_side']['scriptUrlRegexesClientSideVendors'] ?? [],
+      'embedUrlRegexesVendors' => $form['embeds']['embedUrlRegexesVendors'] ?? [],
+    ];
+
+    foreach ($vendor_fields as $field => $element) {
+      if (!empty($element['#disabled']) && $original) {
+        $category->$field = $original->$field;
+        continue;
+      }
+      $target_ids = array_column($form_state->getValue($field) ?: [], 'target_id');
+      $uuids = [];
+      /** @var \Drupal\loom_cookie\Entity\Vendor $vendor */
+      foreach ($vendor_storage->loadMultiple($target_ids) as $vendor) {
+        $uuids[] = $vendor->uuid();
+      }
+      $category->$field = $uuids;
     }
 
     $status = $category->save();

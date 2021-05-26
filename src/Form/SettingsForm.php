@@ -776,6 +776,51 @@ class SettingsForm extends ConfigFormBase {
       ],
     ];
 
+    $form['api'] = [
+      '#type' => 'details',
+      '#open' => FALSE,
+      '#title' => $this->t('API'),
+    ];
+
+    $form['api']['api_domain'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Domain'),
+      '#default_value' => !empty($config->get('api_domain')) ? $config->get('api_domain') : '',
+      '#description' => $this->t('The domain for the API server.'),
+    ];
+
+    $form['api']['api_user'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Username'),
+      '#default_value' => !empty($config->get('api_user')) ? $config->get('api_user') : '',
+      '#description' => $this->t('The username for the API server.'),
+    ];
+
+    $form['api']['api_password'] = [
+      '#type' => 'password',
+      '#title' => $this->t('Password'),
+      '#description' => $this->t('The password for the API server.'),
+      '#attributes' => [
+        'value' => !empty($config->get('api_password')) ? $config->get('api_password') : ''
+      ],
+    ];
+
+    $form['api']['api_shield_user'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Username') . ' (Shield)',
+      '#default_value' => !empty($config->get('api_shield_user')) ? $config->get('api_shield_user') : '',
+      '#description' => $this->t('The username for the shield of the API server.'),
+    ];
+
+    $form['api']['api_shield_password'] = [
+      '#type' => 'password',
+      '#title' => $this->t('Password') . ' (Shield)',
+      '#description' => $this->t('The password for the shield of the API server.'),
+      '#attributes' => [
+        'value' => !empty($config->get('api_shield_password')) ? $config->get('api_shield_password') : ''
+      ],
+    ];
+
     $form['#attached']['library'][] = 'loom_cookie/admin';
 
     // whatever this is
@@ -907,6 +952,11 @@ class SettingsForm extends ConfigFormBase {
       ->set('accept_all_categories_button_label', $form_state->getValue('accept_all_categories_button_label'))
       ->set('fix_first_cookie_category', $form_state->getValue('fix_first_cookie_category'))
       ->set('select_all_categories_by_default', $form_state->getValue('select_all_categories_by_default'))
+      ->set('api_domain', $form_state->getValue('api_domain'))
+      ->set('api_user', $form_state->getValue('api_user'))
+      ->set('api_password', $form_state->getValue('api_password'))
+      ->set('api_shield_user', $form_state->getValue('api_shield_user'))
+      ->set('api_shield_password', $form_state->getValue('api_shield_password'))
       ->save();
 
     parent::submitForm($form, $form_state);
