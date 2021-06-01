@@ -8,7 +8,7 @@
     init: function() {
       script.settings = window.loomCookieSettings;
       script.enabledCategories = script.getAcceptedCategories();
-      script.disabledCategories = Object.keys(script.settings).filter(
+      script.disabledCategories = Object.values(script.settings.categories).filter(
         function(category) {
           return script.enabledCategories.indexOf(category) === -1;
         });
@@ -155,19 +155,24 @@
      * @returns {boolean}
      */
     shouldBlockScript: function(src) {
-      // only block scripts of disabled categories
-      for (let i in script.disabledCategories) {
-        const category = script.disabledCategories[i];
-        if (!script.settings[category].clientSideBlockedScripts) {
-          continue;
-        }
+      if (typeof src == 'object' && src.toString) {
+        src = src.toString();
+      }
 
-        if (typeof src == 'object' && src.toString) {
-          src = src.toString();
-        }
+      // if a vendor is in a disabled, but in no enabled category
+      // and its regexp matches block it
+      for (let i in script.settings.scriptUrlRegexes) {
+        const regexp = script.settings.scriptUrlRegexes[i].regexp;
+        const categories = script.settings.scriptUrlRegexes[i].categories;
 
-        if (src.match(
-          new RegExp(script.settings[category].clientSideBlockedScripts))) {
+        const disabled = Object.values(categories).filter(function(n) {
+          return script.disabledCategories.indexOf(n) !== -1;
+        });
+        const enabled = Object.values(categories).filter(function(n) {
+          return script.enabledCategories.indexOf(n) !== -1;
+        });
+
+        if (disabled.length > 0 && enabled.length === 0 && src.match(new RegExp(regexp))) {
           return true;
         }
       }

@@ -390,16 +390,29 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
     ->getStorage('loom_cookie_category')
     ->loadMultiple();
 
-  $settings = [];
+  $vendor_storage = Drupal::entityTypeManager()
+    ->getStorage('loom_cookie_vendor');
 
+  $settings = [];
+  $settings['categories'] = [];
   foreach ($categories as $category) {
-    if (!empty($category->attachmentNames)) {
-      $attachment_names = $category->attachmentNames;
+    if (!empty($category->attachmentNamesVendors)) {
+      $vendors = $vendor_storage->loadByProperties(['uuid' => $category->attachmentNamesVendors]);
+      $attachment_names = [];
+      /** @var \Drupal\loom_cookie\Entity\Vendor $vendor */
+      foreach ($vendors as $vendor) {
+        if ($vendor->hasField('attachment_names') && !$vendor->get('attachment_names')->isEmpty()) {
+          $attachment_names = array_merge($attachment_names, _loom_cookie_multiline_split($vendor->get('attachment_names')->getString()));
+        }
+      }
 
       // remove all attachments that are configured to be filtered
       foreach ($attachments['#attached']['html_head'] as &$attachment) {
         if (in_array($attachment[1], $attachment_names)) {
-          $attachment[0]['#attributes']['data-loom-cookie-category'] = $category->id();
+          $cookie_category = $attachment[0]['#attributes']['data-loom-cookie-category'] ?? '';
+          $cookie_category = array_filter(explode(',', $cookie_category));
+          $cookie_category[] = $category->id();
+          $attachment[0]['#attributes']['data-loom-cookie-category'] = implode(',', array_unique($cookie_category));
           $attachment[0]['#attributes']['data-loom-cookie-type'] = 'script-block';
           $attachment[0]['#attributes']['data-loom-cookie-content'] = $attachment[0]['#value'] ?? NULL;
           if (isset($attachment[0]['#value'])) {
@@ -409,16 +422,29 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
       }
     }
 
-    if (!empty($category->scriptUrlRegexesClientSide)) {
-      $script_url_regexes = str_replace('/', '\/', $category->scriptUrlRegexesClientSide);
-      $big_regex = !empty($script_url_regexes)
-        ? '^(' . implode('|', $script_url_regexes) . ')$'
-        : '';
+    if (!empty($category->scriptUrlRegexesClientSideVendors)) {
+      $vendors = $vendor_storage->loadByProperties(['uuid' => $category->scriptUrlRegexesClientSideVendors]);
+      /** @var \Drupal\loom_cookie\Entity\Vendor $vendor */
+      foreach ($vendors as $vendor) {
+        if ($vendor->hasField('script_url_regexes') && !$vendor->get('script_url_regexes')->isEmpty()) {
+          $script_url_regexes = str_replace('/', '\/', _loom_cookie_multiline_split($vendor->get('script_url_regexes')->getString()));
+          $big_regex          = !empty($script_url_regexes)
+            ? '^(' . implode('|', $script_url_regexes) . ')$'
+            : '';
 
-      if ($big_regex) {
-        $settings[$category->id]['clientSideBlockedScripts'] = $big_regex;
+          if ($big_regex) {
+            $categories = $settings['scriptUrlRegexes'][$vendor->uuid()]['categories'] ?? [];
+            $categories[$category->id()] = $category->id();
+            $settings['scriptUrlRegexes'][$vendor->uuid()] = [
+              'categories' => array_unique($categories),
+              'regexp' => $big_regex,
+            ];
+          }
+        }
       }
     }
+
+    $settings['categories'][] = $category->id();
   }
 
   // insert script that re-enables scripts when the category gets allowed

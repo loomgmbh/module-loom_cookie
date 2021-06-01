@@ -47,7 +47,7 @@
 
       for (let i in script.enabledCategories) {
         const category = script.enabledCategories[i];
-        $('[data-loom-cookie-category="' + category + '"]').each(
+        $('[data-loom-cookie-category*="' + category + '"]').each(
           function(n, el) {
             let $el = $(el);
 
