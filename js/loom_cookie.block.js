@@ -60,6 +60,37 @@
      * @see https://medium.com/snips-ai/how-to-block-third-party-scripts-with-a-few-lines-of-javascript-f0b08b9c4c0
      */
     blockSomeScripts: function() {
+      const observer = new MutationObserver(function(mutations) {
+        for (let i = 0; i < mutations.length; i++) {
+          const { addedNodes } = mutations[i];
+          for (let i = 0; i < addedNodes.length; i++) {
+            const node = addedNodes[i];
+            // For each added script tag
+            if(node.nodeType === 1 && node.tagName === 'SCRIPT' && node.src && script.shouldBlockScript(node.src)) {
+              // Blocks inline script execution in Safari & Chrome
+              node.type = 'javascript/blocked';
+              node.src = '';
+
+              // Firefox has this additional event which prevents scripts from beeing executed
+              const beforeScriptExecuteListener = function(event) {
+                // Prevent only marked scripts from executing
+                if(node.getAttribute('type') === 'javascript/blocked') {
+                  event.preventDefault();
+                }
+                node.removeEventListener('beforescriptexecute', beforeScriptExecuteListener);
+              }
+              node.addEventListener('beforescriptexecute', beforeScriptExecuteListener);
+            }
+          }
+        }
+      });
+
+      // Starts the monitoring
+      observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+
       const originalCreateElement = document.createElement.bind(document);
       document.createElement = function(tagName, options) {
         // If this is not a script tag, bypass
