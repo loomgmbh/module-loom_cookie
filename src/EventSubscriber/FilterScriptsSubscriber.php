@@ -127,9 +127,9 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
           }
 
           $crawler = new Crawler($whole_tag);
-          $src = $crawler->filter('iframe, embed')->attr('src');
-          $loom_cookie_category = $crawler->filter('iframe, embed')->attr('data-loom-cookie-category');
-          $loom_cookie_src = $crawler->filter('iframe, embed')->attr('data-loom-cookie-src');
+          $src = $crawler->filterXPath('//iframe | //embed')->attr('src');
+          $loom_cookie_category = $crawler->filterXPath('//iframe | //embed')->attr('data-loom-cookie-category');
+          $loom_cookie_src = $crawler->filterXPath('//iframe | //embed')->attr('data-loom-cookie-src');
           $cookie_category = array_filter(explode(',', $loom_cookie_category ?: ''));
           $cookie_category[] = $category_id;
           $cookie_category = implode(',', array_unique($cookie_category));
@@ -185,9 +185,9 @@ class FilterScriptsSubscriber implements EventSubscriberInterface {
           $category_id = $category->id();
 
           $crawler = new Crawler($script_element);
-          $src = $crawler->filter('script')->attr('src');
-          $loom_cookie_category = $crawler->filter('script')->attr('data-loom-cookie-category');
-          $loom_cookie_src = $crawler->filter('script')->attr('data-loom-cookie-src');
+          $src = $crawler->filterXPath('//script')->attr('src');
+          $loom_cookie_category = $crawler->filterXPath('//script')->attr('data-loom-cookie-category');
+          $loom_cookie_src = $crawler->filterXPath('//script')->attr('data-loom-cookie-src');
           $cookie_category = array_filter(explode(',', $loom_cookie_category ?: ''));
           $cookie_category[] = $category_id;
           $cookie_category = implode(',', array_unique($cookie_category));
