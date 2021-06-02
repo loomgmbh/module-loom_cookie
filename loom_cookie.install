@@ -4,6 +4,7 @@ use Drupal\Core\Config\InstallStorage;
 use Drupal\Core\Config\StorageInterface;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Config\FileStorage;
+use Drupal\language\ConfigurableLanguageManager;
 use Drupal\user\Entity\Role;
 
 /**
@@ -138,21 +139,23 @@ function loom_cookie_update_8301() {
   $loom_settings->setData($data);
   $loom_settings->save(TRUE);
 
-  $languages = Drupal::languageManager()->getLanguages();
-  foreach ($languages as $language) {
-    $eu_config_translation = Drupal::languageManager()
-      ->getLanguageConfigOverride($language->getId(), 'eu_cookie_compliance.settings');
-    if (!$eu_config_translation->isNew()) {
-      $loom_config_translation = Drupal::languageManager()
-        ->getLanguageConfigOverride($language->getId(), 'loom_cookie.settings');
+  $language_manager = Drupal::languageManager();
+  if ($language_manager instanceof ConfigurableLanguageManager) {
+    foreach ($language_manager->getLanguages() as $language) {
+      $eu_config_translation = $language_manager
+        ->getLanguageConfigOverride($language->getId(), 'eu_cookie_compliance.settings');
+      if (!$eu_config_translation->isNew()) {
+        $loom_config_translation = $language_manager
+          ->getLanguageConfigOverride($language->getId(), 'loom_cookie.settings');
 
-      foreach ($eu_config_translation->get() as $key => $value) {
-        if (!in_array($key, $deprecated)) {
-          $loom_config_translation->set($key, $value);
+        foreach ($eu_config_translation->get() as $key => $value) {
+          if (!in_array($key, $deprecated)) {
+            $loom_config_translation->set($key, $value);
+          }
         }
-      }
 
-      $loom_config_translation->save();
+        $loom_config_translation->save();
+      }
     }
   }
 
