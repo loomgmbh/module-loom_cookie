@@ -119,7 +119,7 @@ class VendorService {
     /** @var \Drupal\loom_cookie\Entity\Vendor $vendor */
     foreach ($data ? $this->vendorStorage->loadByProperties(['uuid' => array_keys($data)]) : [] as $vendor) {
       // check if update is necessary
-      $flattened = array_map(function($item) {return $item[0]['value'];}, $vendor->toArray());
+      $flattened = array_map(function($item) {return $item[0]['value'] ?? NULL;}, $vendor->toArray());
       $flattened = array_intersect_key($flattened, $data[$vendor->uuid()]);
       if ($flattened == $data[$vendor->uuid()]) {
         unset($data[$vendor->uuid()]);
