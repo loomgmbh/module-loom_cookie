@@ -109,7 +109,9 @@
         Object.defineProperties(scriptElt, {
           'src': {
             get: function() {
-              return scriptElt.getAttribute('src');
+              let return_val = scriptElt.getAttribute('src');
+              if (return_val == null) return_val = '';
+              return return_val;
             },
             set: function(value) {
               if (script.shouldBlockScript(value)) {
