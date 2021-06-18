@@ -453,7 +453,7 @@ function loom_cookie_page_attachments_alter(array &$attachments) {
     [
       '#tag' => 'script',
       '#attributes' => [
-        'src' => 'modules/contrib/loom_cookie/js/loom_cookie.block.js',
+        'src' => '/modules/contrib/loom_cookie/js/loom_cookie.block.js',
       ],
     ],
     'loom_cookie_block_scripts',
