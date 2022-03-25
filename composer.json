@@ -2,6 +2,7 @@
     "name": "loomgmbh/loom_cookie",
     "type": "drupal-module",
     "description": "Extension for eu_cookie_compliance module",
+    "abandoned": "https://gitlab.loom.de/drupal-modules/loom_cookie",
     "keywords": [
         "Drupal"
     ],
